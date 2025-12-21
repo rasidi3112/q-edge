@@ -5,7 +5,6 @@ import sys
 import time
 import numpy as np
 
-# Add color support
 class Colors:
     HEADER = '\033[95m'
     BLUE = '\033[94m'
@@ -17,32 +16,44 @@ class Colors:
     BOLD = '\033[1m'
 
 def print_banner():
-    
-    banner = f
+    banner = f"""
+{Colors.BOLD}{Colors.CYAN}
+╔═══════════════════════════════════════════════════════════════════════╗
+║                                                                        ║
+║   ██████╗       ███████╗██████╗  ██████╗ ███████╗                     ║
+║  ██╔═══██╗      ██╔════╝██╔══██╗██╔════╝ ██╔════╝                     ║
+║  ██║   ██║█████╗█████╗  ██║  ██║██║  ███╗█████╗                       ║
+║  ██║▄▄ ██║╚════╝██╔══╝  ██║  ██║██║   ██║██╔══╝                       ║
+║  ╚██████╔╝      ███████╗██████╔╝╚██████╔╝███████╗                     ║
+║   ╚══▀▀═╝       ╚══════╝╚═════╝  ╚═════╝ ╚══════╝                     ║
+║                                                                        ║
+║          Federated Hybrid Quantum-Neural Network Platform              ║
+║                                                                        ║
+║  FL: Federated Learning    QML: Quantum ML    PQC: Post-Quantum Crypto ║
+╚═══════════════════════════════════════════════════════════════════════╝
+{Colors.ENDC}
+"""
     print(banner)
 
 def print_section(title):
-    
     print(f"\n{Colors.BOLD}{Colors.BLUE}{'═' * 70}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.BLUE}  {title}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.BLUE}{'═' * 70}{Colors.ENDC}\n")
 
 def print_status(message, status="info"):
-    
     icons = {
-        "info": f"{Colors.CYAN}ℹ️ ",
+        "info": f"{Colors.CYAN}ℹ️  ",
         "success": f"{Colors.GREEN}✅ ",
-        "warning": f"{Colors.YELLOW}⚠️ ",
+        "warning": f"{Colors.YELLOW}⚠️  ",
         "error": f"{Colors.RED}❌ ",
-        "quantum": f"{Colors.CYAN}⚛️ ",
+        "quantum": f"{Colors.CYAN}⚛️  ",
         "security": f"{Colors.GREEN}🔐 ",
         "mobile": f"{Colors.BLUE}📱 ",
     }
-    icon = icons.get(status, f"{Colors.CYAN}ℹ️ ")
+    icon = icons.get(status, f"{Colors.CYAN}ℹ️  ")
     print(f"{icon}{message}{Colors.ENDC}")
 
 def demo_quantum_circuits():
-    
     print_section("🔮 Demo 1: Variational Quantum Circuits (VQC)")
     
     from src.quantum.circuits import VariationalQuantumCircuit, VQCConfig, EntanglementPattern
@@ -62,7 +73,6 @@ def demo_quantum_circuits():
     print_status(f"Circuit depth: {vqc.get_circuit_depth()}", "info")
     print_status(f"Gate counts: {vqc.get_gate_count()}", "info")
     
-    # Forward pass
     print_status("\nExecuting forward pass with random features...", "quantum")
     features = np.random.randn(8)
     
@@ -84,7 +94,6 @@ def demo_quantum_circuits():
     return vqc
 
 def demo_quantum_kernels():
-    
     print_section("🎯 Demo 2: Quantum Kernel Alignment (QKA)")
     
     from src.quantum.kernels import QuantumKernelAlignment, QKAConfig, FeatureMapType
@@ -99,19 +108,15 @@ def demo_quantum_kernels():
     
     qka = QuantumKernelAlignment(config, seed=42)
     
-    # Create sample data
     print_status("Creating synthetic dataset (2 classes)...", "info")
     np.random.seed(42)
     
-    # Class 0: centered at (-1, -1)
     X0 = np.random.randn(10, 4) - 1
-    # Class 1: centered at (1, 1)
     X1 = np.random.randn(10, 4) + 1
     
     X = np.vstack([X0, X1])
     y = np.array([0] * 10 + [1] * 10)
     
-    # Compute kernel matrix
     print_status("Computing quantum kernel matrix...", "quantum")
     
     start_time = time.time()
@@ -121,7 +126,6 @@ def demo_quantum_kernels():
     print_status(f"Kernel matrix shape: {K.shape}", "success")
     print_status(f"Execution time: {exec_time:.2f}ms", "info")
     
-    # Visualize kernel matrix
     print_status("\nKernel matrix heatmap (20x20):", "info")
     print("      ", end="")
     for j in range(20):
@@ -150,7 +154,6 @@ def demo_quantum_kernels():
     return qka
 
 def demo_error_mitigation():
-    
     print_section("🛡️ Demo 3: Zero-Noise Extrapolation (ZNE)")
     
     from src.quantum.error_mitigation import ZeroNoiseExtrapolation, ZNEConfig, ExtrapolationMethod
@@ -164,11 +167,9 @@ def demo_error_mitigation():
     
     zne = ZeroNoiseExtrapolation(config)
     
-    # Simulate noisy measurements
     ideal_value = 0.85
     print_status(f"Ideal (noise-free) expectation value: {ideal_value}", "info")
     
-    # Simulate exponential noise decay
     scales = np.array(config.scale_factors)
     noisy_values = ideal_value * np.exp(-0.15 * (scales - 1)) + np.random.randn(len(scales)) * 0.01
     
@@ -176,7 +177,6 @@ def demo_error_mitigation():
     for s, v in zip(scales, noisy_values):
         print(f"    λ = {s:.1f}: ⟨O⟩ = {v:.4f}")
     
-    # Apply ZNE
     print_status("\nApplying Richardson extrapolation...", "quantum")
     result = zne.extrapolate(scales, noisy_values)
     
@@ -184,8 +184,7 @@ def demo_error_mitigation():
     print_status(f"Method used: {result['method_used']}", "info")
     print_status(f"Confidence: {result['confidence']:.2%}", "info")
     
-    # Calculate improvement
-    unmitigated = noisy_values[-1]  # Highest noise
+    unmitigated = noisy_values[-1]
     improvement = abs(ideal_value - result['mitigated_value']) / abs(ideal_value - unmitigated)
     
     print_status(f"\n📊 Error reduction: {(1 - improvement) * 100:.1f}%", "success")
@@ -193,7 +192,6 @@ def demo_error_mitigation():
     return zne
 
 async def demo_quantum_aggregation():
-    
     print_section("🌐 Demo 4: Federated Learning with Quantum Aggregation")
     
     from src.quantum.aggregator import (
@@ -210,7 +208,7 @@ async def demo_quantum_aggregation():
         vqc_layers=4,
         qka_layers=2,
         aggregation_strategy=AggregationStrategy.FEDAVG,
-        use_error_mitigation=False,  # Faster for demo
+        use_error_mitigation=False,
         classical_weight=0.7,
     )
     
@@ -219,7 +217,6 @@ async def demo_quantum_aggregation():
     print_status(f"VQC: {config.n_qubits} qubits, {config.vqc_layers} layers", "info")
     print_status(f"Aggregation: 70% classical + 30% quantum", "info")
     
-    # Simulate mobile clients
     n_clients = 5
     n_rounds = 3
     
@@ -228,10 +225,8 @@ async def demo_quantum_aggregation():
     for round_num in range(n_rounds):
         print(f"\n{Colors.BOLD}  📍 Round {round_num + 1}/{n_rounds}{Colors.ENDC}")
         
-        # Create client updates
         updates = []
         for i in range(n_clients):
-            # Simulate non-IID data by adding client-specific bias
             weights = np.random.randn(100) + i * 0.1
             n_samples = 100 + i * 20
             local_loss = 2.0 * np.exp(-0.3 * round_num) + np.random.rand() * 0.1
@@ -245,7 +240,6 @@ async def demo_quantum_aggregation():
             
             print(f"     📱 Client {i}: {n_samples} samples, loss={local_loss:.4f}")
         
-        # Perform aggregation
         print_status("  Running quantum-enhanced aggregation...", "quantum")
         
         start_time = time.time()
@@ -258,7 +252,6 @@ async def demo_quantum_aggregation():
         if global_state.quantum_embedding is not None:
             print_status(f"  Quantum embedding computed: {len(global_state.quantum_embedding)} dims", "quantum")
     
-    # Final metrics
     metrics = aggregator.get_aggregation_metrics()
     
     print(f"\n{Colors.BOLD}{Colors.GREEN}  ════════════════════════════════════════{Colors.ENDC}")
@@ -271,57 +264,60 @@ async def demo_quantum_aggregation():
     return aggregator
 
 def demo_pqc_security():
-    
     print_section("🔐 Demo 5: Post-Quantum Cryptography (Kyber + Dilithium)")
     
-    from src.backend.security import PQCProvider, PQCAlgorithm
+    import hashlib
+    import os
     
     print_status("Initializing PQC Provider (simulation mode)...", "security")
+    print_status("Note: This is a SIMULATION - real PQC requires liboqs library", "warning")
     
-    provider = PQCProvider(use_simulation=True)
-    
-    # Kyber key encapsulation
+    # Simulate Kyber-1024
     print_status("\n📦 Kyber-1024 Key Encapsulation:", "security")
     
     start_time = time.time()
-    keypair = provider.generate_keypair(PQCAlgorithm.KYBER_1024)
+    # Simulate keypair generation (real Kyber would use lattice cryptography)
+    public_key = os.urandom(1568)  # Kyber-1024 public key size
+    private_key = os.urandom(3168)  # Kyber-1024 private key size
     keygen_time = (time.time() - start_time) * 1000
     
     print_status(f"  Keypair generated in {keygen_time:.2f}ms", "success")
-    print_status(f"  Public key size: {len(keypair.public_key)} bytes", "info")
-    print_status(f"  Private key size: {len(keypair.private_key)} bytes", "info")
+    print_status(f"  Public key size: {len(public_key)} bytes", "info")
+    print_status(f"  Private key size: {len(private_key)} bytes", "info")
     
-    # Encapsulation
+    # Simulate encapsulation
     start_time = time.time()
-    encapsulated = provider.encapsulate(keypair.public_key, PQCAlgorithm.KYBER_1024)
+    ciphertext = os.urandom(1568)  # Kyber-1024 ciphertext size
+    shared_secret = hashlib.sha256(public_key + ciphertext).digest()
     encap_time = (time.time() - start_time) * 1000
     
     print_status(f"  Encapsulation time: {encap_time:.2f}ms", "success")
-    print_status(f"  Ciphertext size: {len(encapsulated.ciphertext)} bytes", "info")
-    print_status(f"  Shared secret: {len(encapsulated.shared_secret)} bytes", "info")
+    print_status(f"  Ciphertext size: {len(ciphertext)} bytes", "info")
+    print_status(f"  Shared secret: {len(shared_secret)} bytes", "info")
     
-    # Decapsulation
+    # Simulate decapsulation  
     start_time = time.time()
-    shared_secret = provider.decapsulate(encapsulated.ciphertext, keypair)
+    decap_secret = hashlib.sha256(public_key + ciphertext).digest()
     decap_time = (time.time() - start_time) * 1000
     
     print_status(f"  Decapsulation time: {decap_time:.2f}ms", "success")
     
-    # Verify shared secrets match
-    if shared_secret == encapsulated.shared_secret:
+    if decap_secret == shared_secret:
         print_status("  ✓ Shared secrets match!", "success")
     
-    # Dilithium signatures
+    # Simulate Dilithium-5
     print_status("\n✍️ Dilithium-5 Digital Signatures:", "security")
     
-    sig_keypair = provider.generate_keypair(PQCAlgorithm.DILITHIUM_5)
-    print_status(f"  Signing key: {len(sig_keypair.private_key)} bytes", "info")
-    print_status(f"  Verification key: {len(sig_keypair.public_key)} bytes", "info")
+    sig_public = os.urandom(2592)  # Dilithium-5 public key
+    sig_private = os.urandom(4864)  # Dilithium-5 private key
+    print_status(f"  Signing key: {len(sig_private)} bytes", "info")
+    print_status(f"  Verification key: {len(sig_public)} bytes", "info")
     
     message = b"Q-Edge: Secure Federated Learning with Quantum Enhancement"
     
     start_time = time.time()
-    signature = provider.sign(message, sig_keypair)
+    # Simulate signature (HMAC as placeholder)
+    signature = hashlib.sha512(sig_private + message).digest()
     sign_time = (time.time() - start_time) * 1000
     
     print_status(f"  Signature generated in {sign_time:.2f}ms", "success")
@@ -329,44 +325,64 @@ def demo_pqc_security():
     
     # Verify
     start_time = time.time()
-    is_valid = provider.verify(message, signature, sig_keypair.public_key, PQCAlgorithm.DILITHIUM_5)
+    expected_sig = hashlib.sha512(sig_private + message).digest()
+    is_valid = (signature == expected_sig)
     verify_time = (time.time() - start_time) * 1000
     
     print_status(f"  Verification time: {verify_time:.2f}ms", "success")
     print_status(f"  Signature valid: {is_valid}", "success" if is_valid else "error")
     
-    print_status("\n🛡️ Security Level: NIST Post-Quantum Level 5", "success")
-    print_status("   Resistant to Shor's algorithm attacks!", "info")
+    print_status("\n🛡️ Security Level: NIST Post-Quantum Level 5 (simulated)", "success")
+    print_status("   Would be resistant to Shor's algorithm attacks!", "info")
 
 def print_summary():
-    
     print_section("📊 Demo Summary")
     
-    summary = f
+    summary = f"""
+{Colors.GREEN}
+┌─────────────────────────────────────────────────────────────────────┐
+│                     Q-Edge Demo Complete!                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ✅ Demo 1: Variational Quantum Circuits (VQC)                      │
+│     - 8 qubits, 4 layers, 96 parameters                             │
+│     - StronglyEntangling ansatz                                     │
+│                                                                      │
+│  ✅ Demo 2: Quantum Kernel Alignment (QKA)                          │
+│     - ZZ feature map                                                │
+│     - Class separation visible in kernel matrix                     │
+│                                                                      │
+│  ✅ Demo 3: Zero-Noise Extrapolation (ZNE)                          │
+│     - Richardson extrapolation                                      │
+│     - Error mitigation for NISQ devices                             │
+│                                                                      │
+│  ✅ Demo 4: Federated Learning + Quantum Aggregation                │
+│     - 5 simulated mobile clients                                    │
+│     - Hybrid classical-quantum aggregation                          │
+│                                                                      │
+│  ✅ Demo 5: Post-Quantum Cryptography                               │
+│     - Kyber-1024 key encapsulation                                  │
+│     - Dilithium-5 digital signatures                                │
+│                                                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│  Status: Research/Educational Proof-of-Concept                      │
+│  License: Apache 2.0                                                │
+│  GitHub: https://github.com/rasidi3112/q-edge                       │
+└─────────────────────────────────────────────────────────────────────┘
+{Colors.ENDC}
+"""
     
     print(summary)
 
 async def main():
-    
     print_banner()
     
     try:
-        # Demo 1: VQC
         demo_quantum_circuits()
-        
-        # Demo 2: QKA
         demo_quantum_kernels()
-        
-        # Demo 3: ZNE
         demo_error_mitigation()
-        
-        # Demo 4: Quantum Aggregation
         await demo_quantum_aggregation()
-        
-        # Demo 5: PQC Security
         demo_pqc_security()
-        
-        # Summary
         print_summary()
         
     except Exception as e:
