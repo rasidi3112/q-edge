@@ -22,11 +22,14 @@ class QEdgeApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6C63FF),
-          brightness: Brightness.dark,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0F1419),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF5B8DEF),
+          secondary: Color(0xFF7C5CFF),
+          surface: Color(0xFF1A1F2E),
         ),
-        fontFamily: 'Inter',
+        fontFamily: 'SF Pro Text',
       ),
       home: const QEdgeDashboard(),
     );
@@ -41,14 +44,13 @@ class QEdgeDashboard extends StatefulWidget {
 }
 
 class _QEdgeDashboardState extends State<QEdgeDashboard>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late AnimationController _pulseController;
 
   bool _isTraining = false;
   bool _isPQCConnected = false;
   int _currentRound = 0;
-  int _totalRounds = 10;
+  final int _totalRounds = 10;
   double _currentLoss = 0.0;
   double _currentAccuracy = 0.0;
 
@@ -64,11 +66,6 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
     _initializePQC();
     _initializeQuantumSimulation();
   }
@@ -76,7 +73,6 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
   @override
   void dispose() {
     _tabController.dispose();
-    _pulseController.dispose();
     _trainingTimer?.cancel();
     _quantumTimer?.cancel();
     super.dispose();
@@ -88,29 +84,24 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
     });
 
     Future.delayed(const Duration(seconds: 2), () {
-      _addPQCLog(
-        'Keypair generated: 1568 bytes public, 3168 bytes private',
-        LogType.success,
-      );
-      _addPQCLog('Initiating key encapsulation with server...', LogType.info);
+      _addPQCLog('Keypair generated successfully', LogType.success);
+      _addPQCLog('Initiating key encapsulation...', LogType.info);
     });
 
     Future.delayed(const Duration(seconds: 3), () {
-      _addPQCLog('Key encapsulation successful', LogType.success);
-      _addPQCLog('Shared secret established: 32 bytes', LogType.success);
-      _addPQCLog('Generating Dilithium-5 signature keypair...', LogType.info);
+      _addPQCLog('Shared secret established', LogType.success);
+      _addPQCLog('Generating Dilithium-5 signature...', LogType.info);
     });
 
     Future.delayed(const Duration(seconds: 4), () {
-      _addPQCLog('Signature keypair ready: 2592 bytes public', LogType.success);
-      _addPQCLog('PQC Tunnel Established ✓', LogType.success);
+      _addPQCLog('PQC tunnel established', LogType.success);
       setState(() => _isPQCConnected = true);
     });
   }
 
   void _initializeQuantumSimulation() {
-    _quantumTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (_quantumStates.length >= 100) {
+    _quantumTimer = Timer.periodic(const Duration(milliseconds: 800), (timer) {
+      if (_quantumStates.length >= 50) {
         _quantumStates.removeAt(0);
       }
 
@@ -147,26 +138,21 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
       _accuracyHistory.clear();
     });
 
-    _addPQCLog('Starting Federated Learning...', LogType.info);
+    _addPQCLog('Starting federated learning...', LogType.info);
 
     _trainingTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (_currentRound >= _totalRounds) {
         timer.cancel();
         setState(() => _isTraining = false);
-        _addPQCLog(
-          'Training complete! Final accuracy: ${(_currentAccuracy * 100).toStringAsFixed(1)}%',
-          LogType.success,
-        );
+        _addPQCLog('Training complete', LogType.success);
         return;
       }
 
       final random = Random();
       final newLoss =
           2.0 * exp(-0.3 * _currentRound) + random.nextDouble() * 0.1;
-      final newAccuracy = min(
-        0.98,
-        0.5 + 0.05 * _currentRound + random.nextDouble() * 0.02,
-      );
+      final newAccuracy =
+          min(0.98, 0.5 + 0.05 * _currentRound + random.nextDouble() * 0.02);
 
       setState(() {
         _currentRound++;
@@ -176,16 +162,10 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
         _accuracyHistory.add(newAccuracy);
       });
 
-      _addPQCLog(
-        'Round $_currentRound: loss=${newLoss.toStringAsFixed(4)}, acc=${(newAccuracy * 100).toStringAsFixed(1)}%',
-        LogType.info,
-      );
+      _addPQCLog('Round $_currentRound completed', LogType.info);
 
       if (_currentRound % 3 == 0) {
-        _addPQCLog(
-          'Quantum aggregation triggered (VQC update)',
-          LogType.quantum,
-        );
+        _addPQCLog('Quantum aggregation triggered', LogType.quantum);
       }
     });
   }
@@ -193,204 +173,209 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          _buildStatusBar(),
-          _buildTabBar(),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildTrainingTab(),
-                _buildQuantumTab(),
-                _buildSecurityTab(),
-                _buildSettingsTab(),
-              ],
+      backgroundColor: const Color(0xFF0F1419),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            _buildMetricsRow(),
+            _buildTabBar(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildTrainingTab(),
+                  _buildQuantumTab(),
+                  _buildSecurityTab(),
+                  _buildSettingsTab(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: _buildFAB(),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      title: Row(
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      child: Row(
         children: [
-          AnimatedBuilder(
-            animation: _pulseController,
-            builder: (context, child) {
-              return Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(
-                        0xFF6C63FF,
-                      ).withOpacity(0.3 + 0.3 * _pulseController.value),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: const Center(
-                  child: Text(
-                    'Q',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF6C63FF),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'Q-Edge',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFF6C63FF).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(4),
+              color: const Color(0xFF5B8DEF).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: const Text(
-              'FQNN',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF6C63FF),
+            child: const Center(
+              child: Text(
+                'Q',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF5B8DEF),
+                ),
               ),
             ),
           ),
-        ],
-      ),
-      actions: [_buildConnectionIndicator(), const SizedBox(width: 16)],
-    );
-  }
-
-  Widget _buildConnectionIndicator() {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _isPQCConnected ? Colors.green : Colors.red,
-            boxShadow: [
-              BoxShadow(
-                color: (_isPQCConnected ? Colors.green : Colors.red)
-                    .withOpacity(0.5),
-                blurRadius: 4,
-                spreadRadius: 1,
+          const SizedBox(width: 12),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Q-Edge',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              Text(
+                'Federated Quantum Neural Network',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF6B7280),
+                ),
               ),
             ],
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          _isPQCConnected ? 'PQC Secured' : 'Connecting...',
-          style: TextStyle(
-            fontSize: 12,
-            color: _isPQCConnected ? Colors.green : Colors.orange,
-          ),
-        ),
-      ],
+          const Spacer(),
+          _buildConnectionBadge(),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatusBar() {
+  Widget _buildConnectionBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3C),
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+        color: _isPQCConnected
+            ? const Color(0xFF059669).withOpacity(0.12)
+            : const Color(0xFFD97706).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: _isPQCConnected
+              ? const Color(0xFF059669).withOpacity(0.3)
+              : const Color(0xFFD97706).withOpacity(0.3),
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildStatusItem(
-            'Round',
-            '$_currentRound/$_totalRounds',
-            Icons.loop,
-            Colors.blue,
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _isPQCConnected
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFFF59E0B),
+            ),
           ),
-          _buildStatusItem(
-            'Loss',
-            _currentLoss.toStringAsFixed(4),
-            Icons.trending_down,
-            Colors.orange,
-          ),
-          _buildStatusItem(
-            'Accuracy',
-            '${(_currentAccuracy * 100).toStringAsFixed(1)}%',
-            Icons.check_circle_outline,
-            Colors.green,
-          ),
-          _buildStatusItem(
-            'Status',
-            _isTraining ? 'Training' : 'Idle',
-            _isTraining ? Icons.sync : Icons.pause,
-            _isTraining ? Colors.purple : Colors.grey,
+          const SizedBox(width: 6),
+          Text(
+            _isPQCConnected ? 'Secured' : 'Connecting',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: _isPQCConnected
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFFF59E0B),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusItem(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: color,
+  Widget _buildMetricsRow() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+              child: _buildMetricCard('Round', '$_currentRound/$_totalRounds',
+                  const Color(0xFF5B8DEF))),
+          const SizedBox(width: 8),
+          Expanded(
+              child: _buildMetricCard('Loss', _currentLoss.toStringAsFixed(3),
+                  const Color(0xFFD97706))),
+          const SizedBox(width: 8),
+          Expanded(
+              child: _buildMetricCard(
+                  'Accuracy',
+                  '${(_currentAccuracy * 100).toStringAsFixed(1)}%',
+                  const Color(0xFF059669))),
+          const SizedBox(width: 8),
+          Expanded(
+              child: _buildMetricCard('Status', _isTraining ? 'Active' : 'Idle',
+                  const Color(0xFF7C5CFF))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricCard(String label, String value, Color accentColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1F2E),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF2D3748)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
+            ),
           ),
-        ),
-        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildTabBar() {
     return Container(
-      color: const Color(0xFF1A1F3C),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      height: 40,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1F2E),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: TabBar(
         controller: _tabController,
-        indicatorColor: const Color(0xFF6C63FF),
-        labelColor: const Color(0xFF6C63FF),
-        unselectedLabelColor: Colors.grey,
+        indicator: BoxDecoration(
+          color: const Color(0xFF2D3748),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorPadding: const EdgeInsets.all(3),
+        labelColor: Colors.white,
+        unselectedLabelColor: const Color(0xFF6B7280),
+        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        dividerColor: Colors.transparent,
         tabs: const [
-          Tab(icon: Icon(Icons.insights), text: 'Training'),
-          Tab(icon: Icon(Icons.blur_on), text: 'Quantum'),
-          Tab(icon: Icon(Icons.security), text: 'Security'),
-          Tab(icon: Icon(Icons.settings), text: 'Settings'),
+          Tab(text: 'Training'),
+          Tab(text: 'Quantum'),
+          Tab(text: 'Security'),
+          Tab(text: 'Settings'),
         ],
       ),
     );
@@ -402,90 +387,90 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Loss Curve'),
+          _buildSectionLabel('Loss Curve'),
           const SizedBox(height: 8),
-          _buildLossChart(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Accuracy Curve'),
+          _buildChartCard(_lossHistory, const Color(0xFFD97706), 2.5),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Accuracy Curve'),
           const SizedBox(height: 8),
-          _buildAccuracyChart(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Training Configuration'),
+          _buildChartCard(_accuracyHistory, const Color(0xFF059669), 1.0),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Configuration'),
           const SizedBox(height: 8),
-          _buildConfigCard(),
+          _buildConfigSection(),
+          const SizedBox(height: 80),
         ],
       ),
     );
   }
 
-  Widget _buildLossChart() {
-    return Container(
-      height: 200,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3C),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: CustomPaint(
-        size: const Size(double.infinity, 168),
-        painter: ChartPainter(
-          data: _lossHistory,
-          color: Colors.orange,
-          maxY: 2.5,
-        ),
+  Widget _buildSectionLabel(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF9CA3AF),
+        letterSpacing: 0.3,
       ),
     );
   }
 
-  Widget _buildAccuracyChart() {
+  Widget _buildChartCard(List<double> data, Color color, double maxY) {
     return Container(
-      height: 200,
+      height: 160,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3C),
+        color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF2D3748)),
       ),
       child: CustomPaint(
-        size: const Size(double.infinity, 168),
-        painter: ChartPainter(
-          data: _accuracyHistory,
-          color: Colors.green,
-          maxY: 1.0,
-        ),
+        size: const Size(double.infinity, 128),
+        painter: SimpleChartPainter(data: data, color: color, maxY: maxY),
       ),
     );
   }
 
-  Widget _buildConfigCard() {
+  Widget _buildConfigSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3C),
+        color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF2D3748)),
       ),
       child: Column(
         children: [
-          _buildConfigRow('Local Epochs', '5'),
-          _buildConfigRow('Batch Size', '32'),
-          _buildConfigRow('Learning Rate', '0.001'),
-          _buildConfigRow('Gradient Compression', '10%'),
-          _buildConfigRow('Aggregation', 'FedAvg + VQC'),
+          _buildConfigRow('Local Epochs', '5', true),
+          _buildConfigRow('Batch Size', '32', false),
+          _buildConfigRow('Learning Rate', '0.001', false),
+          _buildConfigRow('Compression', '10%', false),
+          _buildConfigRow('Aggregation', 'FedAvg + VQC', false),
         ],
       ),
     );
   }
 
-  Widget _buildConfigRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+  Widget _buildConfigRow(String label, String value, bool isFirst) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        border: isFirst
+            ? null
+            : const Border(
+                top: BorderSide(color: Color(0xFF2D3748)),
+              ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[400])),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(label,
+              style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -497,84 +482,74 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Quantum Entanglement Status'),
+          _buildSectionLabel('Entanglement Status'),
           const SizedBox(height: 8),
-          _buildEntanglementVisualizer(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Qubit States'),
+          _buildEntanglementSection(),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Qubit Amplitudes'),
           const SizedBox(height: 8),
-          _buildQubitStates(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('VQC Parameters'),
+          _buildQubitSection(),
+          const SizedBox(height: 20),
+          _buildSectionLabel('VQC Parameters'),
           const SizedBox(height: 8),
-          _buildVQCParams(),
+          _buildVQCSection(),
+          const SizedBox(height: 80),
         ],
       ),
     );
   }
 
-  Widget _buildEntanglementVisualizer() {
-    final latestState = _quantumStates.isNotEmpty
-        ? _quantumStates.last
-        : QuantumState();
+  Widget _buildEntanglementSection() {
+    final latestState =
+        _quantumStates.isNotEmpty ? _quantumStates.last : QuantumState();
 
     return Container(
-      height: 200,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3C),
+        color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF2D3748)),
       ),
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildQubitCircle('Q0', latestState.qubit0, Colors.blue),
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  return Container(
-                    width: 100,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.blue.withOpacity(0.3),
-                          Colors.purple.withOpacity(
-                            0.8 * latestState.entanglement,
-                          ),
-                          Colors.red.withOpacity(0.3),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  );
-                },
+              _buildQubitIndicator(
+                  'Q0', latestState.qubit0, const Color(0xFF5B8DEF)),
+              Container(
+                width: 60,
+                height: 2,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF5B8DEF).withOpacity(0.3),
+                      const Color(0xFF7C5CFF)
+                          .withOpacity(0.8 * latestState.entanglement),
+                      const Color(0xFF7C5CFF).withOpacity(0.3),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(1),
+                ),
               ),
-              _buildQubitCircle('Q1', latestState.qubit1, Colors.red),
+              _buildQubitIndicator(
+                  'Q1', latestState.qubit1, const Color(0xFF7C5CFF)),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMetricBox(
-                'Entanglement',
-                '${(latestState.entanglement * 100).toStringAsFixed(1)}%',
-                Colors.purple,
-              ),
-              _buildMetricBox(
-                'Coherence',
-                '${(latestState.coherence * 100).toStringAsFixed(1)}%',
-                Colors.cyan,
-              ),
-              _buildMetricBox(
-                'Fidelity',
-                '${(0.95 + 0.05 * latestState.coherence * 100).toStringAsFixed(1)}%',
-                Colors.green,
-              ),
+              Expanded(
+                  child: _buildStatBox('Entanglement',
+                      '${(latestState.entanglement * 100).toStringAsFixed(0)}%')),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: _buildStatBox('Coherence',
+                      '${(latestState.coherence * 100).toStringAsFixed(0)}%')),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: _buildStatBox('Fidelity',
+                      '${(95 + 5 * latestState.coherence).toStringAsFixed(0)}%')),
             ],
           ),
         ],
@@ -582,103 +557,127 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
     );
   }
 
-  Widget _buildQubitCircle(String label, double value, Color color) {
+  Widget _buildQubitIndicator(String label, double value, Color color) {
     return Column(
       children: [
         Container(
-          width: 60,
-          height: 60,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [color.withOpacity(0.8), color.withOpacity(0.2)],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.4),
-                blurRadius: 12,
-                spreadRadius: 2,
-              ),
-            ],
+            color: color.withOpacity(0.1),
+            border: Border.all(color: color.withOpacity(0.4), width: 2),
           ),
           child: Center(
             child: Text(
               '|${value > 0.5 ? "1" : "0"}⟩',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
             ),
           ),
         ),
         const SizedBox(height: 8),
-        Text(label, style: TextStyle(color: Colors.grey[400])),
+        Text(label,
+            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12)),
       ],
     );
   }
 
-  Widget _buildMetricBox(String label, String value, Color color) {
+  Widget _buildStatBox(String label, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: const Color(0xFF0F1419),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
         children: [
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(fontSize: 10, color: color.withOpacity(0.8)),
+            style: const TextStyle(
+              fontSize: 10,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQubitStates() {
+  Widget _buildQubitSection() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3C),
+        color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF2D3748)),
       ),
       child: Column(
         children: List.generate(8, (index) {
-          final random = Random(index);
+          final random = Random(index + DateTime.now().second);
           final amplitude = 0.3 + random.nextDouble() * 0.7;
+          final color = Color.lerp(
+              const Color(0xFF5B8DEF), const Color(0xFF7C5CFF), index / 7)!;
 
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
-                Text(
-                  'q$index:',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    color: Colors.grey[400],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: LinearProgressIndicator(
-                    value: amplitude,
-                    backgroundColor: Colors.grey[800],
-                    valueColor: AlwaysStoppedAnimation(
-                      Color.lerp(Colors.blue, Colors.purple, index / 7)!,
+                SizedBox(
+                  width: 28,
+                  child: Text(
+                    'q$index',
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  amplitude.toStringAsFixed(2),
-                  style: const TextStyle(fontFamily: 'monospace'),
+                Expanded(
+                  child: Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: const Color(0xFF2D3748),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: amplitude,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(3),
+                          color: color,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 36,
+                  child: Text(
+                    amplitude.toStringAsFixed(2),
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      color: color,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -688,22 +687,20 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
     );
   }
 
-  Widget _buildVQCParams() {
+  Widget _buildVQCSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3C),
+        color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF2D3748)),
       ),
       child: Column(
         children: [
-          _buildConfigRow('Qubits', '8'),
-          _buildConfigRow('Layers', '4'),
-          _buildConfigRow('Ansatz', 'StronglyEntangling'),
-          _buildConfigRow('Entanglement', 'Full'),
-          _buildConfigRow('Parameters', '96'),
-          _buildConfigRow('Circuit Depth', '17'),
+          _buildConfigRow('Qubits', '8', true),
+          _buildConfigRow('Layers', '4', false),
+          _buildConfigRow('Ansatz', 'StronglyEntangling', false),
+          _buildConfigRow('Parameters', '96', false),
+          _buildConfigRow('Circuit Depth', '17', false),
         ],
       ),
     );
@@ -712,40 +709,14 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
   Widget _buildSecurityTab() {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3C),
-            border: Border(
-              bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                _isPQCConnected ? Icons.lock : Icons.lock_open,
-                color: _isPQCConnected ? Colors.green : Colors.orange,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                _isPQCConnected
-                    ? 'Post-Quantum Cryptography Active'
-                    : 'Establishing Secure Connection...',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: _isPQCConnected ? Colors.green : Colors.orange,
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildSecurityStatus(),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             itemCount: _pqcLogs.length,
             itemBuilder: (context, index) {
               final log = _pqcLogs[_pqcLogs.length - 1 - index];
-              return _buildLogEntry(log);
+              return _buildLogItem(log);
             },
           ),
         ),
@@ -753,32 +724,102 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
     );
   }
 
-  Widget _buildLogEntry(PQCLogEntry log) {
+  Widget _buildSecurityStatus() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _isPQCConnected
+            ? const Color(0xFF059669).withOpacity(0.08)
+            : const Color(0xFFD97706).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _isPQCConnected
+              ? const Color(0xFF059669).withOpacity(0.2)
+              : const Color(0xFFD97706).withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _isPQCConnected
+                ? Icons.verified_user_outlined
+                : Icons.security_outlined,
+            color: _isPQCConnected
+                ? const Color(0xFF10B981)
+                : const Color(0xFFF59E0B),
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _isPQCConnected
+                    ? 'Post-Quantum Secured'
+                    : 'Establishing Connection',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: _isPQCConnected
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFF59E0B),
+                ),
+              ),
+              Text(
+                _isPQCConnected
+                    ? 'Kyber-1024 + Dilithium-5'
+                    : 'Initializing...',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogItem(PQCLogEntry log) {
     final color = _getLogColor(log.type);
-    final icon = _getLogIcon(log.type);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFF2D3748)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 12),
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(top: 5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(log.message, style: TextStyle(color: color)),
-                const SizedBox(height: 4),
+                Text(
+                  log.message,
+                  style:
+                      const TextStyle(color: Color(0xFFE5E7EB), fontSize: 13),
+                ),
+                const SizedBox(height: 3),
                 Text(
                   _formatTime(log.timestamp),
-                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                  style:
+                      const TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
                 ),
               ],
             ),
@@ -788,208 +829,195 @@ class _QEdgeDashboardState extends State<QEdgeDashboard>
     );
   }
 
-  Color _getLogColor(LogType type) {
-    switch (type) {
-      case LogType.info:
-        return Colors.blue;
-      case LogType.success:
-        return Colors.green;
-      case LogType.warning:
-        return Colors.orange;
-      case LogType.error:
-        return Colors.red;
-      case LogType.quantum:
-        return Colors.purple;
-    }
-  }
-
-  IconData _getLogIcon(LogType type) {
-    switch (type) {
-      case LogType.info:
-        return Icons.info_outline;
-      case LogType.success:
-        return Icons.check_circle_outline;
-      case LogType.warning:
-        return Icons.warning_amber;
-      case LogType.error:
-        return Icons.error_outline;
-      case LogType.quantum:
-        return Icons.blur_on;
-    }
-  }
-
-  String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:'
-        '${time.minute.toString().padLeft(2, '0')}:'
-        '${time.second.toString().padLeft(2, '0')}.'
-        '${time.millisecond.toString().padLeft(3, '0')}';
-  }
-
   Widget _buildSettingsTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Server Configuration'),
+          _buildSectionLabel('Server'),
           const SizedBox(height: 8),
-          _buildSettingsCard([
-            _buildSettingTile(
-              'Server Address',
-              'api.qedge.ai:443',
-              Icons.cloud,
-            ),
-            _buildSettingTile(
-              'Azure Quantum Workspace',
-              'qedge-production',
-              Icons.computer,
-            ),
-            _buildSettingTile('Quantum Target', 'ionq.simulator', Icons.memory),
+          _buildSettingsGroup([
+            _buildSettingRow('Server Address', 'api.qedge.ai:443', true),
+            _buildSettingRow('Workspace', 'qedge-production', false),
+            _buildSettingRow('Connection', 'WebSocket + TLS 1.3', false),
           ]),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Security Settings'),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Privacy'),
           const SizedBox(height: 8),
-          _buildSettingsCard([
-            _buildSwitchTile(
-              'Post-Quantum Cryptography',
-              'Kyber-1024 + Dilithium-5',
-              true,
-            ),
-            _buildSwitchTile(
-              'Gradient Compression',
-              'Top-K Sparsification (10%)',
-              true,
-            ),
-            _buildSwitchTile(
-              'Battery-Aware Training',
-              'Adapt to device state',
-              true,
-            ),
+          _buildSettingsGroup([
+            _buildToggleRow('Differential Privacy', true, true),
+            _buildToggleRow('Local Training Only', true, false),
+            _buildToggleRow('Battery-Aware', false, false),
           ]),
-          const SizedBox(height: 24),
-          _buildSectionTitle('About'),
+          const SizedBox(height: 20),
+          _buildSectionLabel('About'),
           const SizedBox(height: 8),
-          _buildSettingsCard([
-            _buildSettingTile('Version', '1.0.0-beta', Icons.info),
-            _buildSettingTile('Client ID', 'mobile_001', Icons.perm_identity),
-            _buildSettingTile(
-              'Research Lead',
-              'Ahmad Rasidi (Roy)',
-              Icons.person,
-            ),
+          _buildSettingsGroup([
+            _buildSettingRow('Version', '1.0.0-beta', true),
+            _buildSettingRow('Client ID', 'mobile_001', false),
+            _buildSettingRow('Author', 'Ahmad Rasidi', false),
           ]),
+          const SizedBox(height: 80),
         ],
       ),
     );
   }
 
-  Widget _buildSettingsCard(List<Widget> children) {
+  Widget _buildSettingsGroup(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3C),
+        color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF2D3748)),
       ),
       child: Column(children: children),
     );
   }
 
-  Widget _buildSettingTile(String title, String subtitle, IconData icon) {
-    return ListTile(
-      leading: Icon(icon, color: const Color(0xFF6C63FF)),
-      title: Text(title),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[400])),
-      trailing: const Icon(Icons.chevron_right),
-    );
-  }
-
-  Widget _buildSwitchTile(String title, String subtitle, bool value) {
-    return ListTile(
-      title: Text(title),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+  Widget _buildSettingRow(String label, String value, bool isFirst) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        border: isFirst
+            ? null
+            : const Border(
+                top: BorderSide(color: Color(0xFF2D3748)),
+              ),
       ),
-      trailing: Switch(
-        value: value,
-        onChanged: (v) {},
-        activeColor: const Color(0xFF6C63FF),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: const TextStyle(color: Color(0xFFE5E7EB), fontSize: 13)),
+          Text(value,
+              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13)),
+        ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF6C63FF),
+  Widget _buildToggleRow(String label, bool value, bool isFirst) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        border: isFirst
+            ? null
+            : const Border(
+                top: BorderSide(color: Color(0xFF2D3748)),
+              ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: const TextStyle(color: Color(0xFFE5E7EB), fontSize: 13)),
+          Switch(
+            value: value,
+            onChanged: (_) {},
+            activeColor: const Color(0xFF5B8DEF),
+            activeTrackColor: const Color(0xFF5B8DEF).withOpacity(0.3),
+            inactiveThumbColor: const Color(0xFF6B7280),
+            inactiveTrackColor: const Color(0xFF2D3748),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFAB() {
     return FloatingActionButton.extended(
-      onPressed: _isPQCConnected ? _startTraining : null,
+      onPressed: _isPQCConnected ? (_isTraining ? null : _startTraining) : null,
       backgroundColor: _isPQCConnected
-          ? (_isTraining ? Colors.red : const Color(0xFF6C63FF))
-          : Colors.grey,
-      icon: Icon(_isTraining ? Icons.stop : Icons.play_arrow),
-      label: Text(_isTraining ? 'Stop' : 'Start Training'),
+          ? (_isTraining ? const Color(0xFF6B7280) : const Color(0xFF5B8DEF))
+          : const Color(0xFF374151),
+      elevation: 0,
+      icon: Icon(
+        _isTraining ? Icons.hourglass_top : Icons.play_arrow,
+        color: Colors.white,
+        size: 20,
+      ),
+      label: Text(
+        _isTraining ? 'Training...' : 'Start Training',
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+        ),
+      ),
     );
+  }
+
+  Color _getLogColor(LogType type) {
+    switch (type) {
+      case LogType.info:
+        return const Color(0xFF5B8DEF);
+      case LogType.success:
+        return const Color(0xFF10B981);
+      case LogType.warning:
+        return const Color(0xFFF59E0B);
+      case LogType.error:
+        return const Color(0xFFEF4444);
+      case LogType.quantum:
+        return const Color(0xFF7C5CFF);
+    }
+  }
+
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}:'
+        '${time.second.toString().padLeft(2, '0')}';
   }
 }
 
-
-class ChartPainter extends CustomPainter {
+class SimpleChartPainter extends CustomPainter {
   final List<double> data;
   final Color color;
   final double maxY;
 
-  ChartPainter({required this.data, required this.color, required this.maxY});
+  SimpleChartPainter(
+      {required this.data, required this.color, required this.maxY});
 
   @override
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) {
       final textPainter = TextPainter(
         text: TextSpan(
-          text: 'No data yet',
-          style: TextStyle(color: Colors.grey[600]),
+          text: 'Waiting for data...',
+          style: TextStyle(
+              color: const Color(0xFF6B7280).withOpacity(0.5), fontSize: 13),
         ),
         textDirection: TextDirection.ltr,
       );
       textPainter.layout();
       textPainter.paint(
         canvas,
-        Offset(
-          (size.width - textPainter.width) / 2,
-          (size.height - textPainter.height) / 2,
-        ),
+        Offset((size.width - textPainter.width) / 2,
+            (size.height - textPainter.height) / 2),
       );
       return;
     }
 
-    final paint = Paint()
+    final linePaint = Paint()
       ..color = color
       ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     final fillPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [color.withOpacity(0.3), color.withOpacity(0.0)],
+        colors: [color.withOpacity(0.2), color.withOpacity(0.0)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
     final fillPath = Path();
 
-    final dx = size.width / (data.length > 1 ? data.length - 1 : 1);
-
-    for (var i = 0; i < data.length; i++) {
-      final x = i * dx;
-      final y = size.height - (data[i] / maxY) * size.height;
+    for (int i = 0; i < data.length; i++) {
+      final x = (i / (data.length - 1).clamp(1, double.infinity)) * size.width;
+      final y = size.height - (data[i] / maxY).clamp(0.0, 1.0) * size.height;
 
       if (i == 0) {
         path.moveTo(x, y);
@@ -1001,29 +1029,24 @@ class ChartPainter extends CustomPainter {
       }
     }
 
-    fillPath.lineTo((data.length - 1) * dx, size.height);
+    fillPath.lineTo(size.width, size.height);
     fillPath.close();
 
     canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, linePaint);
 
-    final dotPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    for (var i = 0; i < data.length; i++) {
-      final x = i * dx;
-      final y = size.height - (data[i] / maxY) * size.height;
-      canvas.drawCircle(Offset(x, y), 3, dotPaint);
+    // Draw last point
+    if (data.isNotEmpty) {
+      final lastX = size.width;
+      final lastY =
+          size.height - (data.last / maxY).clamp(0.0, 1.0) * size.height;
+      canvas.drawCircle(Offset(lastX, lastY), 4, Paint()..color = color);
     }
   }
 
   @override
-  bool shouldRepaint(covariant ChartPainter oldDelegate) {
-    return oldDelegate.data != data;
-  }
+  bool shouldRepaint(covariant SimpleChartPainter oldDelegate) => true;
 }
-
 
 enum LogType { info, success, warning, error, quantum }
 
@@ -1032,11 +1055,8 @@ class PQCLogEntry {
   final LogType type;
   final DateTime timestamp;
 
-  PQCLogEntry({
-    required this.message,
-    required this.type,
-    required this.timestamp,
-  });
+  PQCLogEntry(
+      {required this.message, required this.type, required this.timestamp});
 }
 
 class QuantumState {
@@ -1047,10 +1067,10 @@ class QuantumState {
   final DateTime timestamp;
 
   QuantumState({
-    this.qubit0 = 0.0,
-    this.qubit1 = 0.0,
+    this.qubit0 = 0.5,
+    this.qubit1 = 0.5,
     this.entanglement = 0.5,
-    this.coherence = 1.0,
+    this.coherence = 0.8,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 }
