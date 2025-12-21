@@ -1,9 +1,4 @@
-"""
-Unit Tests for Quantum Module
-============================
 
-Comprehensive tests for the quantum computing components of Q-Edge.
-"""
 
 import pytest
 import numpy as np
@@ -29,12 +24,11 @@ from src.quantum.error_mitigation import (
     MeasurementErrorMitigation,
 )
 
-
 class TestVariationalQuantumCircuit:
-    """Tests for VQC implementation."""
+    
     
     def test_vqc_initialization(self):
-        """Test VQC initializes correctly with default config."""
+        
         config = VQCConfig(n_qubits=4, n_layers=2)
         vqc = VariationalQuantumCircuit(config)
         
@@ -44,7 +38,7 @@ class TestVariationalQuantumCircuit:
         assert vqc.num_params > 0
     
     def test_vqc_forward_pass(self):
-        """Test VQC forward pass returns correct shape."""
+        
         config = VQCConfig(n_qubits=4, n_layers=2)
         vqc = VariationalQuantumCircuit(config)
         
@@ -57,7 +51,7 @@ class TestVariationalQuantumCircuit:
         assert np.all(output >= 0)
     
     def test_vqc_batch_forward(self):
-        """Test VQC batch forward pass."""
+        
         config = VQCConfig(n_qubits=4, n_layers=2)
         vqc = VariationalQuantumCircuit(config)
         
@@ -69,7 +63,7 @@ class TestVariationalQuantumCircuit:
             assert np.isclose(np.sum(output), 1.0, atol=1e-6)
     
     def test_vqc_different_entanglement_patterns(self):
-        """Test VQC with different entanglement patterns."""
+        
         for pattern in EntanglementPattern:
             config = VQCConfig(n_qubits=4, n_layers=2, entanglement=pattern)
             vqc = VariationalQuantumCircuit(config)
@@ -80,7 +74,7 @@ class TestVariationalQuantumCircuit:
             assert output.shape == (16,)
     
     def test_vqc_serialization(self):
-        """Test VQC serialization and deserialization."""
+        
         config = VQCConfig(n_qubits=4, n_layers=2)
         vqc = VariationalQuantumCircuit(config, seed=42)
         
@@ -94,7 +88,7 @@ class TestVariationalQuantumCircuit:
         assert_array_almost_equal(vqc_restored.params, vqc.params)
     
     def test_vqc_gate_count(self):
-        """Test VQC gate count calculation."""
+        
         config = VQCConfig(
             n_qubits=4,
             n_layers=2,
@@ -109,7 +103,7 @@ class TestVariationalQuantumCircuit:
         assert all(count > 0 for count in gate_counts.values())
     
     def test_vqc_reproducibility(self):
-        """Test VQC produces reproducible results with same seed."""
+        
         config = VQCConfig(n_qubits=4, n_layers=2)
         
         vqc1 = VariationalQuantumCircuit(config, seed=42)
@@ -122,12 +116,11 @@ class TestVariationalQuantumCircuit:
         
         assert_array_almost_equal(output1, output2)
 
-
 class TestQuantumKernelAlignment:
-    """Tests for QKA implementation."""
+    
     
     def test_qka_initialization(self):
-        """Test QKA initializes correctly."""
+        
         config = QKAConfig(n_qubits=4, n_layers=2)
         qka = QuantumKernelAlignment(config)
         
@@ -135,7 +128,7 @@ class TestQuantumKernelAlignment:
         assert qka.feature_map_params is not None
     
     def test_kernel_evaluation(self):
-        """Test kernel evaluation between two points."""
+        
         config = QKAConfig(n_qubits=4, n_layers=1)
         qka = QuantumKernelAlignment(config)
         
@@ -148,7 +141,7 @@ class TestQuantumKernelAlignment:
         assert 0 <= kernel_value <= 1
     
     def test_kernel_self_similarity(self):
-        """Test kernel of point with itself equals 1."""
+        
         config = QKAConfig(n_qubits=4, n_layers=1)
         qka = QuantumKernelAlignment(config)
         
@@ -160,7 +153,7 @@ class TestQuantumKernelAlignment:
         assert np.isclose(kernel_value, 1.0, atol=0.1)
     
     def test_kernel_matrix_computation(self):
-        """Test kernel matrix computation."""
+        
         config = QKAConfig(n_qubits=4, n_layers=1)
         qka = QuantumKernelAlignment(config)
         
@@ -175,7 +168,7 @@ class TestQuantumKernelAlignment:
         assert np.allclose(np.diag(K), 1.0, atol=0.1)
     
     def test_kernel_alignment_score(self):
-        """Test kernel alignment score computation."""
+        
         config = QKAConfig(n_qubits=4, n_layers=1)
         qka = QuantumKernelAlignment(config)
         
@@ -188,7 +181,7 @@ class TestQuantumKernelAlignment:
         assert np.isclose(alignment, 1.0, atol=1e-6)
     
     def test_kernel_alignment_optimization(self):
-        """Test kernel alignment optimization."""
+        
         config = QKAConfig(
             n_qubits=4,
             n_layers=1,
@@ -206,7 +199,7 @@ class TestQuantumKernelAlignment:
         assert result["final_alignment"] >= 0
     
     def test_qka_serialization(self):
-        """Test QKA serialization."""
+        
         config = QKAConfig(n_qubits=4, n_layers=1)
         qka = QuantumKernelAlignment(config, seed=42)
         
@@ -219,19 +212,18 @@ class TestQuantumKernelAlignment:
             qka.feature_map_params,
         )
 
-
 class TestZeroNoiseExtrapolation:
-    """Tests for ZNE implementation."""
+    
     
     def test_zne_initialization(self):
-        """Test ZNE initializes correctly."""
+        
         config = ZNEConfig(scale_factors=[1.0, 2.0, 3.0])
         zne = ZeroNoiseExtrapolation(config)
         
         assert len(zne.config.scale_factors) == 3
     
     def test_linear_extrapolation(self):
-        """Test linear extrapolation method."""
+        
         config = ZNEConfig(
             scale_factors=[1.0, 2.0, 3.0],
             extrapolation_method=ExtrapolationMethod.LINEAR,
@@ -248,7 +240,7 @@ class TestZeroNoiseExtrapolation:
         assert np.isclose(result["mitigated_value"], 1.0, atol=0.05)
     
     def test_polynomial_extrapolation(self):
-        """Test polynomial extrapolation method."""
+        
         config = ZNEConfig(
             scale_factors=[1.0, 1.5, 2.0, 2.5],
             extrapolation_method=ExtrapolationMethod.POLYNOMIAL,
@@ -266,7 +258,7 @@ class TestZeroNoiseExtrapolation:
         assert result["method_used"] == "polynomial"
     
     def test_richardson_extrapolation(self):
-        """Test Richardson extrapolation method."""
+        
         config = ZNEConfig(
             scale_factors=[1.0, 2.0, 3.0],
             extrapolation_method=ExtrapolationMethod.RICHARDSON,
@@ -282,7 +274,7 @@ class TestZeroNoiseExtrapolation:
         assert result["method_used"] == "richardson"
     
     def test_zne_config_validation(self):
-        """Test ZNE config validation."""
+        
         # Should raise for less than 2 scale factors
         with pytest.raises(ValueError):
             ZNEConfig(scale_factors=[1.0])
@@ -291,19 +283,18 @@ class TestZeroNoiseExtrapolation:
         with pytest.raises(ValueError):
             ZNEConfig(scale_factors=[0.5, 1.0, 1.5])
 
-
 class TestMeasurementErrorMitigation:
-    """Tests for measurement error mitigation."""
+    
     
     def test_mem_initialization(self):
-        """Test MEM initializes correctly."""
+        
         mem = MeasurementErrorMitigation(n_qubits=2)
         
         assert mem.n_qubits == 2
         assert not mem._is_calibrated
     
     def test_mem_mitigation_preserves_distribution(self):
-        """Test that mitigated probs are valid distribution."""
+        
         mem = MeasurementErrorMitigation(n_qubits=2, method="least_squares")
         
         # Set up fake calibration
@@ -318,13 +309,12 @@ class TestMeasurementErrorMitigation:
         assert np.isclose(np.sum(mitigated), 1.0)
         assert np.all(mitigated >= 0)
 
-
 class TestQuantumAggregator:
-    """Tests for Quantum Global Aggregator."""
+    
     
     @pytest.mark.asyncio
     async def test_aggregator_initialization(self):
-        """Test aggregator initializes correctly."""
+        
         from src.quantum.aggregator import (
             QuantumGlobalAggregator,
             QuantumAggregatorConfig,
@@ -339,7 +329,7 @@ class TestQuantumAggregator:
     
     @pytest.mark.asyncio
     async def test_classical_aggregation(self):
-        """Test classical FedAvg aggregation."""
+        
         from src.quantum.aggregator import (
             QuantumGlobalAggregator,
             QuantumAggregatorConfig,
@@ -370,7 +360,7 @@ class TestQuantumAggregator:
     
     @pytest.mark.asyncio
     async def test_quantum_aggregation(self):
-        """Test quantum-enhanced aggregation."""
+        
         from src.quantum.aggregator import (
             QuantumGlobalAggregator,
             QuantumAggregatorConfig,
@@ -398,7 +388,6 @@ class TestQuantumAggregator:
         assert result.round_number == 1
         assert result.quantum_embedding is not None
         assert "quantum_norm" in result.aggregation_metrics
-
 
 # Run tests with: pytest tests/unit/test_quantum.py -v
 if __name__ == "__main__":

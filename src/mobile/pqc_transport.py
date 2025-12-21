@@ -1,20 +1,3 @@
-"""
-PQC Transport Layer for Mobile Edge Communication
-=================================================
-
-This module implements a Post-Quantum Cryptography transport layer
-for secure communication between mobile devices and the Q-Edge backend.
-
-Security Features:
-- Kyber key encapsulation for ephemeral key exchange
-- Dilithium signatures for message authentication
-- Hybrid encryption (PQC + AES-GCM) for payload encryption
-- Replay attack protection with timestamps and nonces
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import base64
@@ -33,20 +16,9 @@ from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class PQCSession:
-    """Container for PQC session state.
     
-    Attributes:
-        session_id: Unique session identifier.
-        shared_secret: Established shared secret (post-Kyber).
-        server_public_key: Server's Kyber public key.
-        client_keypair: Client's Dilithium keypair for signing.
-        created_at: Session creation timestamp.
-        last_activity: Last activity timestamp.
-        message_counter: Counter for replay protection.
-    """
     
     session_id: str
     shared_secret: bytes
@@ -57,46 +29,8 @@ class PQCSession:
     last_activity: float = field(default_factory=time.time)
     message_counter: int = 0
 
-
 class PQCTransportLayer:
-    """
-    Post-Quantum Cryptography Transport Layer for Mobile-Backend Communication.
     
-    This class provides a complete PQC-secured transport layer for
-    mobile devices communicating with the Q-Edge backend. It handles:
-    
-    1. Key Exchange:
-       - Kyber key encapsulation for quantum-safe key exchange
-       - Ephemeral session keys for forward secrecy
-    
-    2. Message Encryption:
-       - AES-256-GCM for symmetric encryption
-       - Authenticated encryption with associated data (AEAD)
-    
-    3. Authentication:
-       - Dilithium digital signatures
-       - Message authentication codes
-    
-    4. Replay Protection:
-       - Timestamps with tolerance window
-       - Monotonic message counters
-       - Nonce-based deduplication
-    
-    Example:
-        >>> transport = PQCTransportLayer(client_id="mobile_001")
-        >>> await transport.establish_session(server_public_key)
-        >>> 
-        >>> # Encrypt model weights
-        >>> encrypted = transport.encrypt_weights(model_weights)
-        >>> signature = transport.sign(encrypted)
-        >>> 
-        >>> # Send to server...
-    
-    Attributes:
-        client_id: Mobile device identifier.
-        session: Current PQC session.
-        use_simulation: Use simulated crypto (for testing).
-    """
     
     # Constants
     NONCE_SIZE = 12
@@ -108,13 +42,7 @@ class PQCTransportLayer:
         client_id: str,
         use_simulation: bool = True,  # True for development
     ) -> None:
-        """
-        Initialize the PQC transport layer.
         
-        Args:
-            client_id: Unique identifier for this mobile client.
-            use_simulation: Use simulated crypto (True for dev/testing).
-        """
         self.client_id = client_id
         self.use_simulation = use_simulation
         self.session: Optional[PQCSession] = None
@@ -143,7 +71,7 @@ class PQCTransportLayer:
         logger.info(f"Initialized PQCTransportLayer for client: {client_id}")
     
     def _init_signing_keypair(self) -> None:
-        """Initialize Dilithium signing keypair."""
+        
         if self._oqs_available and not self.use_simulation:
             sig = self._oqs.Signature("Dilithium5")
             self._signing_public_key = sig.generate_keypair()
@@ -159,18 +87,7 @@ class PQCTransportLayer:
         self,
         server_public_key: bytes,
     ) -> PQCSession:
-        """
-        Establish a secure session with the server.
         
-        Performs Kyber key encapsulation to establish a shared secret,
-        then creates an authenticated session.
-        
-        Args:
-            server_public_key: Server's Kyber public key.
-            
-        Returns:
-            Established PQC session.
-        """
         session_id = f"{self.client_id}_{int(time.time())}_{secrets.token_hex(8)}"
         
         # Perform key encapsulation
@@ -199,19 +116,7 @@ class PQCTransportLayer:
         context: bytes,
         key_length: int = 32,
     ) -> bytes:
-        """
-        Derive a key from the session shared secret.
         
-        Uses HKDF-like key derivation to produce keys for
-        different purposes (encryption, MAC, etc.).
-        
-        Args:
-            context: Context string for key derivation.
-            key_length: Desired key length in bytes.
-            
-        Returns:
-            Derived key.
-        """
         if self.session is None:
             raise RuntimeError("No session established")
         
@@ -241,18 +146,7 @@ class PQCTransportLayer:
         self,
         weights: List[NDArray],
     ) -> bytes:
-        """
-        Encrypt model weights for transmission to server.
         
-        Serializes and encrypts the weight arrays using AES-256-GCM
-        with the session-derived encryption key.
-        
-        Args:
-            weights: List of model weight arrays.
-            
-        Returns:
-            Encrypted weight payload.
-        """
         # Serialize weights
         import pickle
         serialized = pickle.dumps(weights)
@@ -268,15 +162,7 @@ class PQCTransportLayer:
         self,
         ciphertext: bytes,
     ) -> List[NDArray]:
-        """
-        Decrypt model weights received from server.
         
-        Args:
-            ciphertext: Encrypted weight payload.
-            
-        Returns:
-            List of model weight arrays.
-        """
         import pickle
         import zlib
         
@@ -294,18 +180,7 @@ class PQCTransportLayer:
         plaintext: bytes,
         context: bytes,
     ) -> bytes:
-        """
-        Encrypt data using AES-256-GCM.
         
-        Format: nonce (12) || ciphertext || tag (16)
-        
-        Args:
-            plaintext: Data to encrypt.
-            context: Context for key derivation.
-            
-        Returns:
-            Encrypted data.
-        """
         # Derive encryption key
         key = self._derive_key(context)
         
@@ -332,16 +207,7 @@ class PQCTransportLayer:
         ciphertext: bytes,
         context: bytes,
     ) -> bytes:
-        """
-        Decrypt data using AES-256-GCM.
         
-        Args:
-            ciphertext: Encrypted data (nonce || ciphertext || tag).
-            context: Context for key derivation.
-            
-        Returns:
-            Decrypted plaintext.
-        """
         # Derive encryption key
         key = self._derive_key(context)
         
@@ -372,7 +238,7 @@ class PQCTransportLayer:
         nonce: bytes,
         length: int,
     ) -> bytes:
-        """Generate a pseudo-random key stream for simulation."""
+        
         keystream = b""
         counter = 0
         
@@ -388,18 +254,7 @@ class PQCTransportLayer:
         return keystream[:length]
     
     def sign(self, data: bytes) -> bytes:
-        """
-        Sign data using Dilithium.
         
-        Creates a digital signature that proves the message
-        originated from this client.
-        
-        Args:
-            data: Data to sign.
-            
-        Returns:
-            Dilithium signature.
-        """
         if self._oqs_available and not self.use_simulation:
             sig = self._oqs.Signature("Dilithium5", self._signing_private_key)
             return sig.sign(data)
@@ -417,17 +272,7 @@ class PQCTransportLayer:
         signature: bytes,
         public_key: bytes,
     ) -> bool:
-        """
-        Verify a Dilithium signature.
         
-        Args:
-            data: Signed data.
-            signature: Signature to verify.
-            public_key: Signer's public key.
-            
-        Returns:
-            True if signature is valid.
-        """
         if self._oqs_available and not self.use_simulation:
             sig = self._oqs.Signature("Dilithium5")
             return sig.verify(data, signature, public_key)
@@ -440,21 +285,7 @@ class PQCTransportLayer:
         payload: bytes,
         message_type: str = "weights",
     ) -> bytes:
-        """
-        Create a fully authenticated message for transmission.
         
-        The message format includes:
-        - Header: message type, timestamp, counter, client_id
-        - Encrypted payload
-        - Signature over header + encrypted payload
-        
-        Args:
-            payload: Raw payload to send.
-            message_type: Type of message.
-            
-        Returns:
-            Authenticated message ready for transmission.
-        """
         if self.session is None:
             raise RuntimeError("No session established")
         
@@ -485,18 +316,7 @@ class PQCTransportLayer:
         self,
         message: bytes,
     ) -> Tuple[bytes, Dict[str, Any]]:
-        """
-        Parse and verify an authenticated message from server.
         
-        Args:
-            message: Received authenticated message.
-            
-        Returns:
-            Tuple of (decrypted_payload, metadata_dict).
-            
-        Raises:
-            ValueError: If message authentication fails.
-        """
         # Header is 104 bytes (4 + 32 + 4 + 64)
         header_size = 104
         
@@ -541,12 +361,7 @@ class PQCTransportLayer:
         return payload, metadata
     
     def get_session_info(self) -> Dict[str, Any]:
-        """
-        Get information about the current session.
         
-        Returns:
-            Dictionary with session information.
-        """
         if self.session is None:
             return {"status": "no_session"}
         
@@ -559,9 +374,9 @@ class PQCTransportLayer:
         }
     
     def get_public_key(self) -> bytes:
-        """Get client's signing public key."""
+        
         return self._signing_public_key
     
     def get_public_key_base64(self) -> str:
-        """Get client's signing public key as base64."""
+        
         return base64.b64encode(self._signing_public_key).decode("ascii")

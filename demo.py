@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-Q-Edge Demo Script
-==================
-
-Demonstrates the Federated Hybrid Quantum-Neural Network platform.
-
-Author: Ahmad Rasidi (Roy)
-"""
 
 import asyncio
 import sys
@@ -25,35 +17,18 @@ class Colors:
     BOLD = '\033[1m'
 
 def print_banner():
-    """Print Q-Edge banner."""
-    banner = f"""
-{Colors.CYAN}{Colors.BOLD}
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                                                                           ║
-║     ██████╗       ███████╗██████╗  ██████╗ ███████╗                       ║
-║    ██╔═══██╗      ██╔════╝██╔══██╗██╔════╝ ██╔════╝                       ║
-║    ██║   ██║█████╗█████╗  ██║  ██║██║  ███╗█████╗                         ║
-║    ██║▄▄ ██║╚════╝██╔══╝  ██║  ██║██║   ██║██╔══╝                         ║
-║    ╚██████╔╝      ███████╗██████╔╝╚██████╔╝███████╗                       ║
-║     ╚═▀▀═╝       ╚══════╝╚═════╝  ╚═════╝ ╚══════╝                        ║
-║                                                                           ║
-║       Federated Hybrid Quantum-Neural Network Platform                    ║
-║                                                                           ║
-║       🔮 Quantum Machine Learning    🔐 Post-Quantum Cryptography         ║
-║       📱 Federated Learning          ☁️  Azure Quantum Integration        ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-{Colors.ENDC}"""
+    
+    banner = f
     print(banner)
 
 def print_section(title):
-    """Print section header."""
+    
     print(f"\n{Colors.BOLD}{Colors.BLUE}{'═' * 70}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.BLUE}  {title}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.BLUE}{'═' * 70}{Colors.ENDC}\n")
 
 def print_status(message, status="info"):
-    """Print status message with icon."""
+    
     icons = {
         "info": f"{Colors.CYAN}ℹ️ ",
         "success": f"{Colors.GREEN}✅ ",
@@ -67,7 +42,7 @@ def print_status(message, status="info"):
     print(f"{icon}{message}{Colors.ENDC}")
 
 def demo_quantum_circuits():
-    """Demo Variational Quantum Circuits."""
+    
     print_section("🔮 Demo 1: Variational Quantum Circuits (VQC)")
     
     from src.quantum.circuits import VariationalQuantumCircuit, VQCConfig, EntanglementPattern
@@ -109,7 +84,7 @@ def demo_quantum_circuits():
     return vqc
 
 def demo_quantum_kernels():
-    """Demo Quantum Kernel Alignment."""
+    
     print_section("🎯 Demo 2: Quantum Kernel Alignment (QKA)")
     
     from src.quantum.kernels import QuantumKernelAlignment, QKAConfig, FeatureMapType
@@ -175,7 +150,7 @@ def demo_quantum_kernels():
     return qka
 
 def demo_error_mitigation():
-    """Demo Zero-Noise Extrapolation."""
+    
     print_section("🛡️ Demo 3: Zero-Noise Extrapolation (ZNE)")
     
     from src.quantum.error_mitigation import ZeroNoiseExtrapolation, ZNEConfig, ExtrapolationMethod
@@ -218,7 +193,7 @@ def demo_error_mitigation():
     return zne
 
 async def demo_quantum_aggregation():
-    """Demo Quantum Global Aggregation."""
+    
     print_section("🌐 Demo 4: Federated Learning with Quantum Aggregation")
     
     from src.quantum.aggregator import (
@@ -296,7 +271,7 @@ async def demo_quantum_aggregation():
     return aggregator
 
 def demo_pqc_security():
-    """Demo Post-Quantum Cryptography."""
+    
     print_section("🔐 Demo 5: Post-Quantum Cryptography (Kyber + Dilithium)")
     
     from src.backend.security import PQCProvider, PQCAlgorithm
@@ -364,49 +339,15 @@ def demo_pqc_security():
     print_status("   Resistant to Shor's algorithm attacks!", "info")
 
 def print_summary():
-    """Print demo summary."""
+    
     print_section("📊 Demo Summary")
     
-    summary = f"""
-{Colors.GREEN}{Colors.BOLD}
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      Q-EDGE PLATFORM DEMO COMPLETE                       │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  ✅ Variational Quantum Circuits (VQC)                                  │
-│     • 8 qubits, 4 layers, StronglyEntangling ansatz                     │
-│     • 96 trainable parameters                                            │
-│                                                                          │
-│  ✅ Quantum Kernel Alignment (QKA)                                      │
-│     • ZZ feature map for optimal embeddings                              │
-│     • Exponential feature space advantage                                │
-│                                                                          │
-│  ✅ Zero-Noise Extrapolation (ZNE)                                      │
-│     • Richardson extrapolation for NISQ stability                        │
-│     • Significant error reduction demonstrated                           │
-│                                                                          │
-│  ✅ Quantum-Enhanced Federated Learning                                 │
-│     • 5 mobile clients, 3 FL rounds                                      │
-│     • Hybrid 70% classical + 30% quantum aggregation                     │
-│                                                                          │
-│  ✅ Post-Quantum Cryptography                                           │
-│     • Kyber-1024 key encapsulation                                       │
-│     • Dilithium-5 digital signatures                                     │
-│     • NIST Level 5 security (quantum-safe)                               │
-│                                                                          │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  🔬 Research Lead: Ahmad Rasidi (Roy)                                   │
-│  🌐 Platform: Q-Edge v1.0.0                                              │
-│  🔮 Status: Production-Ready                                             │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-{Colors.ENDC}"""
+    summary = f
     
     print(summary)
 
 async def main():
-    """Run all demos."""
+    
     print_banner()
     
     try:

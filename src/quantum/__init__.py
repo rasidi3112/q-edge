@@ -1,13 +1,4 @@
-"""
-Quantum Computing Module
-========================
 
-This module contains all quantum computing components including:
-- Variational Quantum Circuits (VQC)
-- Quantum Kernel Alignment (QKA)
-- Quantum Error Mitigation (QEM)
-- Azure Quantum Integration
-"""
 
 from src.quantum.aggregator import QuantumGlobalAggregator
 from src.quantum.circuits import VariationalQuantumCircuit

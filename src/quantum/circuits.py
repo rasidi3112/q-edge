@@ -1,21 +1,3 @@
-"""
-Variational Quantum Circuits (VQC) for Q-Edge Platform
-======================================================
-
-This module implements parameterized quantum circuits for the global
-model aggregation in the Federated Hybrid Quantum-Neural Network.
-
-Mathematical Foundation:
-    The VQC implements a unitary operation U(θ) on n qubits:
-    
-    |ψ(θ)⟩ = U(θ)|0⟩^⊗n
-    
-    where U(θ) = ∏ᵢ Uᵢ(θᵢ) is a product of parameterized gates.
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import logging
@@ -29,9 +11,8 @@ from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
-
 class EntanglementPattern(Enum):
-    """Entanglement topology patterns for VQC layers."""
+    
     
     LINEAR = "linear"       # Nearest-neighbor entanglement
     CIRCULAR = "circular"   # Ring topology
@@ -39,9 +20,8 @@ class EntanglementPattern(Enum):
     STAR = "star"           # Hub-and-spoke pattern
     BRICK = "brick"         # Brick-layer pattern
 
-
 class AnsatzType(Enum):
-    """Types of variational ansatz architectures."""
+    
     
     HARDWARE_EFFICIENT = "hardware_efficient"
     STRONGLY_ENTANGLING = "strongly_entangling"
@@ -49,20 +29,9 @@ class AnsatzType(Enum):
     QNN_LAYER = "qnn_layer"
     IQP_EMBEDDING = "iqp_embedding"
 
-
 @dataclass
 class VQCConfig:
-    """Configuration for Variational Quantum Circuit.
     
-    Attributes:
-        n_qubits: Number of qubits in the circuit.
-        n_layers: Number of variational layers.
-        ansatz_type: Type of variational ansatz.
-        entanglement: Entanglement pattern between qubits.
-        rotation_gates: Sequence of rotation gates per qubit.
-        data_reuploading: Whether to use data re-uploading strategy.
-        measurement_basis: Basis for final measurement (pauli_z, pauli_x, etc.).
-    """
     
     n_qubits: int = 8
     n_layers: int = 4
@@ -73,7 +42,7 @@ class VQCConfig:
     measurement_basis: str = "pauli_z"
     
     def __post_init__(self) -> None:
-        """Validate configuration parameters."""
+        
         if self.n_qubits < 2:
             raise ValueError("VQC requires at least 2 qubits")
         if self.n_layers < 1:
@@ -84,41 +53,8 @@ class VQCConfig:
             if gate not in valid_gates:
                 raise ValueError(f"Invalid rotation gate: {gate}. Valid: {valid_gates}")
 
-
 class VariationalQuantumCircuit:
-    """
-    Variational Quantum Circuit for Federated Learning Global Aggregation.
     
-    This class implements a parameterized quantum circuit that can be used
-    as a trainable model for processing aggregated weights from mobile devices
-    in the federated learning pipeline.
-    
-    The circuit architecture follows the design principles from:
-    - Schuld et al. (2021): "Effect of data encoding on the expressive power 
-      of variational quantum machine learning models"
-    - Cerezo et al. (2021): "Variational quantum algorithms"
-    
-    Mathematical Representation:
-        The circuit implements the following transformation:
-        
-        ⟨O⟩ = ⟨0|^⊗n U†(θ) O U(θ) |0⟩^⊗n
-        
-        where:
-        - U(θ) is the parameterized unitary
-        - O is the observable (typically ⊗ᵢ Zᵢ)
-        - θ are the trainable parameters
-    
-    Attributes:
-        config: VQC configuration parameters.
-        device: PennyLane quantum device.
-        params: Current circuit parameters.
-        
-    Example:
-        >>> config = VQCConfig(n_qubits=4, n_layers=3)
-        >>> vqc = VariationalQuantumCircuit(config)
-        >>> features = np.random.randn(4)
-        >>> output = vqc.forward(features)
-    """
     
     def __init__(
         self,
@@ -127,15 +63,7 @@ class VariationalQuantumCircuit:
         shots: Optional[int] = None,
         seed: Optional[int] = None,
     ) -> None:
-        """
-        Initialize the Variational Quantum Circuit.
         
-        Args:
-            config: VQC configuration object.
-            device_name: PennyLane device name (default.qubit, lightning.qubit, etc.).
-            shots: Number of measurement shots (None for exact simulation).
-            seed: Random seed for reproducibility.
-        """
         self.config = config
         self._shots = shots
         self._seed = seed
@@ -165,7 +93,7 @@ class VariationalQuantumCircuit:
         )
     
     def _calculate_param_shape(self) -> tuple[int, ...]:
-        """Calculate the shape of parameter tensor based on ansatz type."""
+        
         n_qubits = self.config.n_qubits
         n_layers = self.config.n_layers
         
@@ -184,15 +112,7 @@ class VariationalQuantumCircuit:
             return (n_layers, n_qubits, n_rotations)
     
     def _initialize_parameters(self) -> NDArray[np.float64]:
-        """
-        Initialize circuit parameters using He initialization.
         
-        He initialization helps prevent vanishing/exploding gradients
-        in deep variational circuits.
-        
-        Returns:
-            Initialized parameter array.
-        """
         # He initialization: scale by sqrt(2/n)
         fan_in = np.prod(self._param_shape[1:])
         scale = np.sqrt(2.0 / fan_in)
@@ -201,27 +121,13 @@ class VariationalQuantumCircuit:
         return params.astype(np.float64)
     
     def _build_circuit(self) -> qml.QNode:
-        """
-        Build the quantum circuit as a PennyLane QNode.
         
-        Returns:
-            Compiled QNode representing the variational circuit.
-        """
         @qml.qnode(self.device, interface="autograd", diff_method="parameter-shift")
         def circuit(
             params: NDArray[np.float64],
             features: NDArray[np.float64],
         ) -> NDArray[np.float64]:
-            """
-            Execute the variational quantum circuit.
             
-            Args:
-                params: Trainable circuit parameters.
-                features: Input features to encode.
-                
-            Returns:
-                Expectation values of Pauli-Z observables.
-            """
             # Feature encoding using angle embedding
             self._encode_features(features)
             
@@ -243,15 +149,7 @@ class VariationalQuantumCircuit:
         return circuit
     
     def _encode_features(self, features: NDArray[np.float64]) -> None:
-        """
-        Encode classical features into quantum state using angle embedding.
         
-        The encoding uses the transformation:
-            |0⟩ → cos(x/2)|0⟩ + sin(x/2)|1⟩
-        
-        Args:
-            features: Classical feature vector.
-        """
         n_features = min(len(features), self.config.n_qubits)
         
         for i in range(n_features):
@@ -263,13 +161,7 @@ class VariationalQuantumCircuit:
         layer_params: NDArray[np.float64],
         layer_idx: int,
     ) -> None:
-        """
-        Apply a single variational layer to all qubits.
         
-        Args:
-            layer_params: Parameters for this layer.
-            layer_idx: Index of the current layer.
-        """
         if self.config.ansatz_type == AnsatzType.STRONGLY_ENTANGLING:
             # Apply Rot gates (RZ-RY-RZ decomposition)
             for qubit in range(self.config.n_qubits):
@@ -295,12 +187,7 @@ class VariationalQuantumCircuit:
                         gate(layer_params[qubit, gate_idx], wires=qubit)
     
     def _apply_entanglement(self, layer_idx: int) -> None:
-        """
-        Apply entangling gates according to the configured pattern.
         
-        Args:
-            layer_idx: Index of the current layer.
-        """
         n_qubits = self.config.n_qubits
         pattern = self.config.entanglement
         
@@ -333,17 +220,12 @@ class VariationalQuantumCircuit:
                 qml.CNOT(wires=[i, i + 1])
     
     def _measure(self) -> NDArray[np.float64]:
-        """
-        Perform measurement on all qubits.
         
-        Returns:
-            Expectation values of Pauli-Z on all qubits.
-        """
         return qml.probs(wires=range(self.config.n_qubits))
     
     @property
     def num_params(self) -> int:
-        """Total number of trainable parameters."""
+        
         return int(np.prod(self._param_shape))
     
     def forward(
@@ -351,16 +233,7 @@ class VariationalQuantumCircuit:
         features: NDArray[np.float64],
         params: Optional[NDArray[np.float64]] = None,
     ) -> NDArray[np.float64]:
-        """
-        Forward pass through the quantum circuit.
         
-        Args:
-            features: Input feature vector of shape (n_qubits,).
-            params: Optional parameter override. Uses stored params if None.
-            
-        Returns:
-            Circuit output probabilities of shape (2^n_qubits,).
-        """
         if params is None:
             params = self.params
             
@@ -381,16 +254,7 @@ class VariationalQuantumCircuit:
         features_batch: NDArray[np.float64],
         params: Optional[NDArray[np.float64]] = None,
     ) -> NDArray[np.float64]:
-        """
-        Process a batch of feature vectors.
         
-        Args:
-            features_batch: Batch of features of shape (batch_size, n_features).
-            params: Optional parameter override.
-            
-        Returns:
-            Batch of circuit outputs of shape (batch_size, 2^n_qubits).
-        """
         results = []
         for features in features_batch:
             output = self.forward(features, params)
@@ -398,12 +262,7 @@ class VariationalQuantumCircuit:
         return np.array(results)
     
     def get_circuit_depth(self) -> int:
-        """
-        Calculate the circuit depth (number of layers in the longest path).
         
-        Returns:
-            Circuit depth.
-        """
         # Approximate depth calculation
         depth_per_layer = 2  # Rotation + entanglement
         if self.config.entanglement == EntanglementPattern.FULL:
@@ -412,12 +271,7 @@ class VariationalQuantumCircuit:
         return self.config.n_layers * depth_per_layer + 1  # +1 for encoding
     
     def get_gate_count(self) -> dict[str, int]:
-        """
-        Count the number of each gate type in the circuit.
         
-        Returns:
-            Dictionary mapping gate names to counts.
-        """
         gate_counts: dict[str, int] = {}
         
         # Rotation gates
@@ -446,15 +300,7 @@ class VariationalQuantumCircuit:
         return gate_counts
     
     def draw(self, style: str = "mpl") -> Any:
-        """
-        Draw the quantum circuit.
         
-        Args:
-            style: Drawing style ('mpl', 'text', or 'console').
-            
-        Returns:
-            Circuit visualization.
-        """
         # Create a sample execution for drawing
         sample_features = np.zeros(self.config.n_qubits)
         
@@ -464,7 +310,7 @@ class VariationalQuantumCircuit:
             return qml.draw_mpl(self._circuit)(self.params, sample_features)
     
     def to_dict(self) -> dict[str, Any]:
-        """Serialize circuit configuration and parameters to dictionary."""
+        
         return {
             "config": {
                 "n_qubits": self.config.n_qubits,
@@ -480,7 +326,7 @@ class VariationalQuantumCircuit:
     
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "VariationalQuantumCircuit":
-        """Deserialize circuit from dictionary."""
+        
         config = VQCConfig(
             n_qubits=data["config"]["n_qubits"],
             n_layers=data["config"]["n_layers"],

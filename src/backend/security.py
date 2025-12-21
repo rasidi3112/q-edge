@@ -1,27 +1,3 @@
-"""
-Post-Quantum Cryptography (PQC) Security Module
-================================================
-
-This module implements Post-Quantum Cryptographic primitives using
-NIST-approved algorithms (Kyber for key encapsulation, Dilithium for
-digital signatures) and Azure Key Vault integration.
-
-Security Features:
-- Kyber-1024 key encapsulation mechanism (KEM)
-- Dilithium-5 digital signatures
-- Azure Key Vault secret management
-- JWT token authentication
-- OWASP Top 10 protections
-
-References:
-- NIST PQC Standardization: https://csrc.nist.gov/projects/post-quantum-cryptography
-- Kyber: https://pq-crystals.org/kyber/
-- Dilithium: https://pq-crystals.org/dilithium/
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import base64
@@ -43,10 +19,9 @@ from jose import JWTError, jwt
 
 logger = logging.getLogger(__name__)
 
-
 # PQC Algorithm Constants
 class PQCAlgorithm(Enum):
-    """Supported Post-Quantum Cryptography algorithms."""
+    
     
     KYBER_512 = "kyber512"
     KYBER_768 = "kyber768"
@@ -55,50 +30,27 @@ class PQCAlgorithm(Enum):
     DILITHIUM_3 = "dilithium3"
     DILITHIUM_5 = "dilithium5"
 
-
 @dataclass
 class PQCKeyPair:
-    """Container for PQC key pair."""
+    
     
     algorithm: PQCAlgorithm
     public_key: bytes
     private_key: bytes
     created_at: datetime
 
-
 @dataclass
 class EncapsulatedKey:
-    """Container for encapsulated key."""
+    
     
     ciphertext: bytes
     shared_secret: bytes
 
-
 class PQCProvider:
-    """
-    Post-Quantum Cryptography Provider.
     
-    This class provides a unified interface for PQC operations,
-    abstracting the underlying library (liboqs when available,
-    fallback to simulated operations for development).
-    
-    In production, this uses liboqs-python which provides bindings
-    to the Open Quantum Safe library implementing Kyber and Dilithium.
-    
-    Example:
-        >>> provider = PQCProvider()
-        >>> keypair = provider.generate_keypair(PQCAlgorithm.KYBER_1024)
-        >>> encapsulated = provider.encapsulate(keypair.public_key)
-        >>> shared_secret = provider.decapsulate(encapsulated.ciphertext, keypair)
-    """
     
     def __init__(self, use_simulation: bool = False) -> None:
-        """
-        Initialize PQC Provider.
         
-        Args:
-            use_simulation: Force simulation mode even if liboqs available.
-        """
         self._use_simulation = use_simulation
         self._oqs_available = False
         
@@ -118,22 +70,14 @@ class PQCProvider:
         self,
         algorithm: PQCAlgorithm = PQCAlgorithm.KYBER_1024,
     ) -> PQCKeyPair:
-        """
-        Generate a PQC key pair.
         
-        Args:
-            algorithm: PQC algorithm to use.
-            
-        Returns:
-            Generated key pair.
-        """
         if self._oqs_available and not self._use_simulation:
             return self._generate_keypair_oqs(algorithm)
         else:
             return self._generate_keypair_simulated(algorithm)
     
     def _generate_keypair_oqs(self, algorithm: PQCAlgorithm) -> PQCKeyPair:
-        """Generate keypair using liboqs."""
+        
         alg_name = self._get_oqs_algorithm_name(algorithm)
         
         if "kyber" in algorithm.value:
@@ -153,7 +97,7 @@ class PQCProvider:
         )
     
     def _generate_keypair_simulated(self, algorithm: PQCAlgorithm) -> PQCKeyPair:
-        """Generate simulated keypair for development."""
+        
         # Simulate key sizes based on algorithm
         if algorithm == PQCAlgorithm.KYBER_512:
             pk_size, sk_size = 800, 1632
@@ -180,19 +124,7 @@ class PQCProvider:
         public_key: bytes,
         algorithm: PQCAlgorithm = PQCAlgorithm.KYBER_1024,
     ) -> EncapsulatedKey:
-        """
-        Encapsulate a shared secret using public key.
         
-        Kyber KEM encapsulation generates a random shared secret
-        and encrypts it under the public key.
-        
-        Args:
-            public_key: Recipient's public key.
-            algorithm: Algorithm (must match key's algorithm).
-            
-        Returns:
-            Ciphertext and shared secret.
-        """
         if self._oqs_available and not self._use_simulation:
             return self._encapsulate_oqs(public_key, algorithm)
         else:
@@ -203,7 +135,7 @@ class PQCProvider:
         public_key: bytes,
         algorithm: PQCAlgorithm,
     ) -> EncapsulatedKey:
-        """Encapsulate using liboqs."""
+        
         alg_name = self._get_oqs_algorithm_name(algorithm)
         kem = self._oqs.KeyEncapsulation(alg_name)
         ciphertext, shared_secret = kem.encap_secret(public_key)
@@ -218,7 +150,7 @@ class PQCProvider:
         public_key: bytes,
         algorithm: PQCAlgorithm,
     ) -> EncapsulatedKey:
-        """Simulated encapsulation for development."""
+        
         # Simulate ciphertext size
         if algorithm == PQCAlgorithm.KYBER_512:
             ct_size = 768
@@ -240,29 +172,20 @@ class PQCProvider:
         ciphertext: bytes,
         keypair: PQCKeyPair,
     ) -> bytes:
-        """
-        Decapsulate and recover shared secret.
         
-        Args:
-            ciphertext: Encapsulated ciphertext.
-            keypair: Recipient's key pair.
-            
-        Returns:
-            Shared secret.
-        """
         if self._oqs_available and not self._use_simulation:
             return self._decapsulate_oqs(ciphertext, keypair)
         else:
             return self._decapsulate_simulated(ciphertext, keypair)
     
     def _decapsulate_oqs(self, ciphertext: bytes, keypair: PQCKeyPair) -> bytes:
-        """Decapsulate using liboqs."""
+        
         alg_name = self._get_oqs_algorithm_name(keypair.algorithm)
         kem = self._oqs.KeyEncapsulation(alg_name, keypair.private_key)
         return kem.decap_secret(ciphertext)
     
     def _decapsulate_simulated(self, ciphertext: bytes, keypair: PQCKeyPair) -> bytes:
-        """Simulated decapsulation for development."""
+        
         return hashlib.sha256(keypair.public_key + b"simulated_encap").digest()
     
     def sign(
@@ -270,29 +193,20 @@ class PQCProvider:
         message: bytes,
         keypair: PQCKeyPair,
     ) -> bytes:
-        """
-        Sign a message using Dilithium.
         
-        Args:
-            message: Message to sign.
-            keypair: Signer's key pair.
-            
-        Returns:
-            Digital signature.
-        """
         if self._oqs_available and not self._use_simulation:
             return self._sign_oqs(message, keypair)
         else:
             return self._sign_simulated(message, keypair)
     
     def _sign_oqs(self, message: bytes, keypair: PQCKeyPair) -> bytes:
-        """Sign using liboqs."""
+        
         alg_name = self._get_oqs_algorithm_name(keypair.algorithm)
         sig = self._oqs.Signature(alg_name, keypair.private_key)
         return sig.sign(message)
     
     def _sign_simulated(self, message: bytes, keypair: PQCKeyPair) -> bytes:
-        """Simulated signing for development."""
+        
         # Use HMAC as a placeholder for Dilithium signature
         return hmac.new(keypair.private_key[:32], message, hashlib.sha256).digest()
     
@@ -303,18 +217,7 @@ class PQCProvider:
         public_key: bytes,
         algorithm: PQCAlgorithm = PQCAlgorithm.DILITHIUM_5,
     ) -> bool:
-        """
-        Verify a Dilithium signature.
         
-        Args:
-            message: Original message.
-            signature: Signature to verify.
-            public_key: Signer's public key.
-            algorithm: Signature algorithm.
-            
-        Returns:
-            True if signature is valid.
-        """
         if self._oqs_available and not self._use_simulation:
             return self._verify_oqs(message, signature, public_key, algorithm)
         else:
@@ -327,7 +230,7 @@ class PQCProvider:
         public_key: bytes,
         algorithm: PQCAlgorithm,
     ) -> bool:
-        """Verify using liboqs."""
+        
         alg_name = self._get_oqs_algorithm_name(algorithm)
         sig = self._oqs.Signature(alg_name)
         return sig.verify(message, signature, public_key)
@@ -338,12 +241,12 @@ class PQCProvider:
         signature: bytes,
         public_key: bytes,
     ) -> bool:
-        """Simulated verification (always returns True for valid length)."""
+        
         # In simulation, just check signature length
         return len(signature) >= 32
     
     def _get_oqs_algorithm_name(self, algorithm: PQCAlgorithm) -> str:
-        """Map our enum to liboqs algorithm names."""
+        
         mapping = {
             PQCAlgorithm.KYBER_512: "Kyber512",
             PQCAlgorithm.KYBER_768: "Kyber768",
@@ -354,38 +257,14 @@ class PQCProvider:
         }
         return mapping.get(algorithm, "Kyber1024")
 
-
 class AzureKeyVaultManager:
-    """
-    Azure Key Vault Manager for secure secret management.
     
-    This class handles all interactions with Azure Key Vault,
-    ensuring that sensitive credentials (API keys, connection strings)
-    are never hardcoded and are retrieved securely at runtime.
-    
-    NO HARDCODED KEYS - All secrets are fetched from Azure Key Vault
-    using DefaultAzureCredential which supports:
-    - Managed Identity (in Azure)
-    - Azure CLI (local development)
-    - Environment variables
-    - Visual Studio Code credentials
-    
-    Example:
-        >>> manager = AzureKeyVaultManager()
-        >>> await manager.connect()
-        >>> api_key = await manager.get_secret("azure-openai-key")
-    """
     
     def __init__(
         self,
         vault_url: Optional[str] = None,
     ) -> None:
-        """
-        Initialize Azure Key Vault Manager.
         
-        Args:
-            vault_url: Key Vault URL. Uses AZURE_KEY_VAULT_URL env var if None.
-        """
         self.vault_url = vault_url or os.getenv("AZURE_KEY_VAULT_URL")
         self._client = None
         self._credential = None
@@ -396,12 +275,7 @@ class AzureKeyVaultManager:
         self._cache_ttl = 300  # 5 minutes
     
     async def connect(self) -> None:
-        """
-        Connect to Azure Key Vault using DefaultAzureCredential.
         
-        Raises:
-            ConnectionError: If unable to connect to Key Vault.
-        """
         if not self.vault_url:
             logger.warning("AZURE_KEY_VAULT_URL not set, Key Vault disabled")
             return
@@ -433,7 +307,7 @@ class AzureKeyVaultManager:
             raise ConnectionError(f"Key Vault connection failed: {e}")
     
     async def disconnect(self) -> None:
-        """Disconnect from Azure Key Vault."""
+        
         self._client = None
         self._credential = None
         self.is_connected = False
@@ -445,16 +319,7 @@ class AzureKeyVaultManager:
         secret_name: str,
         use_cache: bool = True,
     ) -> Optional[str]:
-        """
-        Retrieve a secret from Azure Key Vault.
         
-        Args:
-            secret_name: Name of the secret to retrieve.
-            use_cache: Whether to use cached value if available.
-            
-        Returns:
-            Secret value or None if not found.
-        """
         # Check cache first
         if use_cache and secret_name in self._cache:
             value, timestamp = self._cache[secret_name]
@@ -482,16 +347,7 @@ class AzureKeyVaultManager:
             return os.getenv(env_name)
     
     async def set_secret(self, secret_name: str, value: str) -> bool:
-        """
-        Store a secret in Azure Key Vault.
         
-        Args:
-            secret_name: Name for the secret.
-            value: Secret value to store.
-            
-        Returns:
-            True if successful.
-        """
         if not self.is_connected or self._client is None:
             logger.warning("Key Vault not connected, cannot store secret")
             return False
@@ -510,12 +366,7 @@ class AzureKeyVaultManager:
             return False
     
     async def get_quantum_credentials(self) -> Dict[str, str]:
-        """
-        Retrieve all quantum-related credentials.
         
-        Returns:
-            Dictionary with quantum credential keys and values.
-        """
         credentials = {}
         
         quantum_secrets = [
@@ -534,14 +385,8 @@ class AzureKeyVaultManager:
         return credentials
     
     async def get_openai_key(self) -> Optional[str]:
-        """
-        Retrieve Azure OpenAI API key.
         
-        Returns:
-            API key or None.
-        """
         return await self.get_secret("azure-openai-key")
-
 
 # JWT Token Management
 def create_jwt_token(
@@ -549,17 +394,7 @@ def create_jwt_token(
     session_id: str,
     expires_delta: Optional[timedelta] = None,
 ) -> str:
-    """
-    Create a JWT token for client authentication.
     
-    Args:
-        client_id: Client identifier.
-        session_id: Session identifier.
-        expires_delta: Token expiration time.
-        
-    Returns:
-        Encoded JWT token.
-    """
     secret_key = os.getenv("JWT_SECRET_KEY", "development-secret-key-change-me")
     algorithm = os.getenv("JWT_ALGORITHM", "HS256")
     
@@ -579,20 +414,8 @@ def create_jwt_token(
     encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
     return encoded_jwt
 
-
 def verify_jwt_token(token: str) -> Dict[str, Any]:
-    """
-    Verify and decode a JWT token.
     
-    Args:
-        token: JWT token to verify.
-        
-    Returns:
-        Decoded token payload.
-        
-    Raises:
-        HTTPException: If token is invalid or expired.
-    """
     secret_key = os.getenv("JWT_SECRET_KEY", "development-secret-key-change-me")
     algorithm = os.getenv("JWT_ALGORITHM", "HS256")
     
@@ -607,35 +430,11 @@ def verify_jwt_token(token: str) -> Dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-
 class PQCAuthMiddleware(BaseHTTPMiddleware):
-    """
-    Post-Quantum Cryptography Authentication Middleware.
     
-    This middleware handles PQC-based authentication for mobile clients,
-    verifying Dilithium signatures and managing Kyber key exchanges.
-    
-    The middleware:
-    1. Extracts PQC headers from requests
-    2. Verifies Dilithium signatures on request bodies
-    3. Decrypts Kyber-encrypted payloads
-    4. Validates session tokens
-    
-    Headers:
-    - X-PQC-Signature: Dilithium signature (base64)
-    - X-PQC-Ciphertext: Kyber ciphertext (base64)
-    - X-PQC-Client-ID: Client identifier
-    - X-PQC-Timestamp: Request timestamp (anti-replay)
-    """
     
     def __init__(self, app, excluded_paths: Optional[list] = None) -> None:
-        """
-        Initialize PQC middleware.
         
-        Args:
-            app: FastAPI application.
-            excluded_paths: Paths to exclude from PQC verification.
-        """
         super().__init__(app)
         self.pqc_provider = PQCProvider()
         self.excluded_paths = excluded_paths or [
@@ -648,7 +447,7 @@ class PQCAuthMiddleware(BaseHTTPMiddleware):
         ]
     
     async def dispatch(self, request: Request, call_next):
-        """Process request with PQC verification."""
+        
         # Skip excluded paths
         if request.url.path in self.excluded_paths:
             return await call_next(request)

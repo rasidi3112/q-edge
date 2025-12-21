@@ -1,34 +1,3 @@
-"""
-Quantum Kernel Alignment (QKA) for Optimal Feature Maps
-========================================================
-
-This module implements Quantum Kernel Alignment methods to find the optimal
-quantum feature map for processing aggregated weights from federated learning.
-
-Mathematical Foundation:
-    The quantum kernel is defined as:
-    
-    κ(x, x') = |⟨φ(x)|φ(x')⟩|²
-    
-    where φ(x) is the quantum feature map encoding classical data into
-    the Hilbert space.
-    
-    The kernel alignment score measures similarity between kernels:
-    
-    A(K₁, K₂) = ⟨K₁, K₂⟩_F / (||K₁||_F · ||K₂||_F)
-    
-    where ⟨·,·⟩_F is the Frobenius inner product.
-
-References:
-    - Schuld & Killoran (2019): "Quantum Machine Learning in Feature 
-      Hilbert Spaces"
-    - Hubregtsen et al. (2022): "Training Quantum Embedding Kernels on 
-      Near-Term Quantum Computers"
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import logging
@@ -43,9 +12,8 @@ from scipy.optimize import minimize
 
 logger = logging.getLogger(__name__)
 
-
 class FeatureMapType(Enum):
-    """Types of quantum feature maps for kernel construction."""
+    
     
     ZZ_FEATURE_MAP = "zz_feature_map"       # Diagonal + entanglement
     PAULI_FEATURE_MAP = "pauli_feature_map"  # Pauli rotations
@@ -53,29 +21,16 @@ class FeatureMapType(Enum):
     AMPLITUDE_EMBEDDING = "amplitude"         # Amplitude encoding
     ANGLE_EMBEDDING = "angle"                 # Angle encoding
 
-
 class KernelType(Enum):
-    """Types of quantum kernels."""
+    
     
     FIDELITY = "fidelity"        # Transition amplitude squared
     PROJECTED = "projected"       # Projected quantum kernel
     SWAP_TEST = "swap_test"       # SWAP test kernel
 
-
 @dataclass
 class QKAConfig:
-    """Configuration for Quantum Kernel Alignment.
     
-    Attributes:
-        n_qubits: Number of qubits for feature map.
-        n_layers: Number of parametric layers in feature map.
-        feature_map_type: Type of quantum feature map.
-        kernel_type: Type of quantum kernel.
-        alignment_method: Optimization method for kernel alignment.
-        regularization: L2 regularization strength.
-        max_iterations: Maximum optimization iterations.
-        tolerance: Convergence tolerance.
-    """
     
     n_qubits: int = 8
     n_layers: int = 2
@@ -86,35 +41,8 @@ class QKAConfig:
     max_iterations: int = 100
     tolerance: float = 1e-6
 
-
 class QuantumKernelAlignment:
-    """
-    Quantum Kernel Alignment for Federated Learning Feature Optimization.
     
-    This class implements trainable quantum kernels that can be aligned
-    to target kernels or optimized for classification tasks in the
-    federated learning aggregation pipeline.
-    
-    The quantum kernel leverages the exponentially large Hilbert space
-    to compute inner products that would be intractable classically:
-    
-        κ(x, x') = |⟨0|U†(x)U(x')|0⟩|²
-    
-    where U(x) is the parameterized quantum feature map.
-    
-    Key Features:
-        - Trainable feature map parameters
-        - Multiple kernel types (fidelity, projected, SWAP test)
-        - Kernel target alignment optimization
-        - Compatible with scikit-learn kernel methods
-    
-    Example:
-        >>> config = QKAConfig(n_qubits=4, n_layers=2)
-        >>> qka = QuantumKernelAlignment(config)
-        >>> X = np.random.randn(10, 4)
-        >>> K = qka.compute_kernel_matrix(X)
-        >>> print(K.shape)  # (10, 10)
-    """
     
     def __init__(
         self,
@@ -122,14 +50,7 @@ class QuantumKernelAlignment:
         device_name: str = "default.qubit",
         seed: Optional[int] = None,
     ) -> None:
-        """
-        Initialize the Quantum Kernel Alignment module.
         
-        Args:
-            config: QKA configuration object.
-            device_name: PennyLane device name.
-            seed: Random seed for reproducibility.
-        """
         self.config = config
         self._seed = seed
         self._rng = np.random.default_rng(seed)
@@ -157,7 +78,7 @@ class QuantumKernelAlignment:
         )
     
     def _get_param_shape(self) -> tuple[int, ...]:
-        """Calculate parameter shape for the feature map."""
+        
         n_qubits = self.config.n_qubits
         n_layers = self.config.n_layers
         
@@ -172,13 +93,13 @@ class QuantumKernelAlignment:
             return (n_layers, n_qubits)
     
     def _initialize_params(self) -> NDArray[np.float64]:
-        """Initialize feature map parameters."""
+        
         # Small random initialization
         params = self._rng.uniform(-0.1, 0.1, self._param_shape)
         return params.astype(np.float64)
     
     def _build_kernel_circuit(self) -> qml.QNode:
-        """Build the quantum kernel evaluation circuit."""
+        
         
         @qml.qnode(self.device, interface="autograd")
         def kernel_circuit(
@@ -186,20 +107,7 @@ class QuantumKernelAlignment:
             x2: NDArray[np.float64],
             params: NDArray[np.float64],
         ) -> NDArray[np.float64]:
-            """
-            Evaluate the quantum kernel between two data points.
             
-            The circuit computes κ(x1, x2) = |⟨φ(x1)|φ(x2)⟩|²
-            by applying U†(x1)U(x2) and measuring probability of |0⟩.
-            
-            Args:
-                x1: First data point.
-                x2: Second data point.
-                params: Feature map parameters.
-                
-            Returns:
-                All probabilities (kernel value is first element).
-            """
             # Apply U(x2) - encode second data point
             self._apply_feature_map(x2, params, adjoint=False)
             
@@ -217,14 +125,7 @@ class QuantumKernelAlignment:
         params: NDArray[np.float64],
         adjoint: bool = False,
     ) -> None:
-        """
-        Apply the parameterized feature map to encode classical data.
         
-        Args:
-            x: Classical data vector.
-            params: Feature map parameters.
-            adjoint: If True, apply the adjoint (inverse) of the feature map.
-        """
         n_qubits = self.config.n_qubits
         n_layers = self.config.n_layers
         
@@ -248,7 +149,7 @@ class QuantumKernelAlignment:
         layer_params: NDArray[np.float64],
         adjoint: bool,
     ) -> None:
-        """Apply ZZ feature map layer with parameterized rotations."""
+        
         n_qubits = self.config.n_qubits
         sign = -1.0 if adjoint else 1.0
         
@@ -274,7 +175,7 @@ class QuantumKernelAlignment:
         layer_params: NDArray[np.float64],
         adjoint: bool,
     ) -> None:
-        """Apply Pauli feature map layer."""
+        
         n_qubits = self.config.n_qubits
         sign = -1.0 if adjoint else 1.0
         
@@ -289,7 +190,7 @@ class QuantumKernelAlignment:
         layer_params: NDArray[np.float64],
         adjoint: bool,
     ) -> None:
-        """Apply simple angle embedding layer."""
+        
         n_qubits = self.config.n_qubits
         sign = -1.0 if adjoint else 1.0
         
@@ -302,17 +203,7 @@ class QuantumKernelAlignment:
         x2: NDArray[np.float64],
         params: Optional[NDArray[np.float64]] = None,
     ) -> float:
-        """
-        Evaluate the quantum kernel between two data points.
         
-        Args:
-            x1: First data point.
-            x2: Second data point.
-            params: Optional parameter override.
-            
-        Returns:
-            Kernel value κ(x1, x2).
-        """
         if params is None:
             params = self.feature_map_params
         
@@ -326,17 +217,7 @@ class QuantumKernelAlignment:
         Y: Optional[NDArray[np.float64]] = None,
         params: Optional[NDArray[np.float64]] = None,
     ) -> NDArray[np.float64]:
-        """
-        Compute the kernel matrix for datasets X and Y.
         
-        Args:
-            X: First dataset of shape (n_samples_X, n_features).
-            Y: Second dataset. If None, computes K(X, X).
-            params: Optional parameter override.
-            
-        Returns:
-            Kernel matrix of shape (n_samples_X, n_samples_Y).
-        """
         if params is None:
             params = self.feature_map_params
         
@@ -363,19 +244,7 @@ class QuantumKernelAlignment:
         K1: NDArray[np.float64],
         K2: NDArray[np.float64],
     ) -> float:
-        """
-        Compute the alignment score between two kernel matrices.
         
-        The alignment is defined as the normalized Frobenius inner product:
-        A(K1, K2) = ⟨K1, K2⟩_F / (||K1||_F · ||K2||_F)
-        
-        Args:
-            K1: First kernel matrix.
-            K2: Second kernel matrix (target).
-            
-        Returns:
-            Alignment score in range [-1, 1].
-        """
         # Frobenius inner product
         inner_product = np.sum(K1 * K2)
         
@@ -394,20 +263,7 @@ class QuantumKernelAlignment:
         y: NDArray[np.float64],
         kernel_type: str = "rbf",
     ) -> dict[str, Any]:
-        """
-        Align the quantum kernel to a target kernel derived from labels.
         
-        This method optimizes the feature map parameters to maximize
-        alignment with an ideal kernel that perfectly separates classes.
-        
-        Args:
-            X: Training data of shape (n_samples, n_features).
-            y: Labels of shape (n_samples,).
-            kernel_type: Type of target kernel ('ideal', 'rbf', 'linear').
-            
-        Returns:
-            Dictionary containing optimization results.
-        """
         # Compute target kernel matrix
         if kernel_type == "ideal":
             # Ideal kernel: K[i,j] = 1 if y[i] == y[j], else 0
@@ -479,18 +335,7 @@ class QuantumKernelAlignment:
         return optimization_result
     
     def _center_kernel(self, K: NDArray[np.float64]) -> NDArray[np.float64]:
-        """
-        Center a kernel matrix in feature space.
         
-        Centering is performed as: K_c = K - 1_n K - K 1_n + 1_n K 1_n
-        where 1_n is the n×n matrix of 1/n.
-        
-        Args:
-            K: Kernel matrix of shape (n, n).
-            
-        Returns:
-            Centered kernel matrix.
-        """
         n = K.shape[0]
         one_n = np.ones((n, n)) / n
         
@@ -503,20 +348,7 @@ class QuantumKernelAlignment:
         X_val: Optional[NDArray[np.float64]] = None,
         y_val: Optional[NDArray[np.float64]] = None,
     ) -> dict[str, Any]:
-        """
-        Optimize feature map parameters for classification accuracy.
         
-        Uses kernel target alignment as a proxy for classification performance.
-        
-        Args:
-            X_train: Training features.
-            y_train: Training labels.
-            X_val: Optional validation features.
-            y_val: Optional validation labels.
-            
-        Returns:
-            Optimization results including accuracy metrics.
-        """
         # First align to ideal kernel
         result = self.align_to_target(X_train, y_train, kernel_type="ideal")
         
@@ -540,18 +372,7 @@ class QuantumKernelAlignment:
         self,
         n_samples: int = 1000,
     ) -> float:
-        """
-        Estimate the expressibility of the quantum feature map.
         
-        Expressibility measures how uniformly the feature map covers
-        the Hilbert space. Higher values indicate more uniform coverage.
-        
-        Args:
-            n_samples: Number of random parameter samples.
-            
-        Returns:
-            Expressibility estimate (0 to 1).
-        """
         # Generate random input pairs
         fidelities = []
         
@@ -584,7 +405,7 @@ class QuantumKernelAlignment:
         return float(expressibility)
     
     def to_dict(self) -> dict[str, Any]:
-        """Serialize QKA configuration and parameters."""
+        
         return {
             "config": {
                 "n_qubits": self.config.n_qubits,
@@ -599,7 +420,7 @@ class QuantumKernelAlignment:
     
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "QuantumKernelAlignment":
-        """Deserialize QKA from dictionary."""
+        
         config = QKAConfig(
             n_qubits=data["config"]["n_qubits"],
             n_layers=data["config"]["n_layers"],

@@ -1,27 +1,4 @@
 #!/usr/bin/env python3
-"""
-Mobile Federated Learning Client using Flower
-==============================================
-
-This module implements a mobile FL client simulation using the Flower
-framework (flwr.dev). It simulates mobile devices participating in
-the Q-Edge federated learning pipeline with:
-
-- Local model training on device data
-- PQC-secured weight transmission
-- Bandwidth-efficient gradient compression
-- Battery/compute resource awareness
-
-The client communicates with the Q-Edge backend using the Flower protocol
-augmented with Post-Quantum Cryptography for quantum-safe security.
-
-Example Usage:
-    python -m src.mobile.fl_client --server localhost:8080 --client-id mobile_001
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -69,23 +46,9 @@ from src.mobile.pqc_transport import PQCTransportLayer
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class MobileDeviceConfig:
-    """Configuration for mobile device simulation.
     
-    Attributes:
-        client_id: Unique identifier for this client.
-        server_address: FL server address.
-        local_epochs: Number of local training epochs.
-        batch_size: Training batch size.
-        learning_rate: Local learning rate.
-        enable_pqc: Enable Post-Quantum Cryptography.
-        compress_gradients: Enable gradient compression.
-        compression_ratio: Gradient compression ratio.
-        max_memory_mb: Maximum memory budget in MB.
-        battery_aware: Enable battery-aware training.
-    """
     
     client_id: str = "mobile_client_001"
     server_address: str = "localhost:8080"
@@ -98,14 +61,8 @@ class MobileDeviceConfig:
     max_memory_mb: int = 512
     battery_aware: bool = True
 
-
 class SimpleMobileModel(nn.Module):
-    """
-    Simple neural network model for mobile edge training.
     
-    A lightweight MLP suitable for mobile devices with limited
-    compute resources. Can be replaced with more complex models.
-    """
     
     def __init__(
         self,
@@ -113,14 +70,7 @@ class SimpleMobileModel(nn.Module):
         hidden_dims: List[int] = [256, 128],
         output_dim: int = 10,
     ) -> None:
-        """
-        Initialize the mobile model.
         
-        Args:
-            input_dim: Input feature dimension.
-            hidden_dims: Hidden layer dimensions.
-            output_dim: Output dimension (number of classes).
-        """
         super().__init__()
         
         layers = []
@@ -139,62 +89,18 @@ class SimpleMobileModel(nn.Module):
         self.model = nn.Sequential(*layers)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass."""
+        
         return self.model(x)
 
-
 class MobileFlowerClient:
-    """
-    Flower-based Federated Learning Client for Mobile Edge Devices.
     
-    This client implements the Flower NumPyClient interface for
-    participating in federated learning rounds. It includes:
-    
-    1. Local Training:
-       - Trains on device-local data
-       - Respects battery and memory constraints
-       - Supports gradient compression
-    
-    2. PQC Security:
-       - Kyber key encapsulation for weight encryption
-       - Dilithium signatures for weight authentication
-       - Quantum-safe communication with backend
-    
-    3. Resource Awareness:
-       - Adapts batch size to available memory
-       - Reduces training intensity on low battery
-       - Compresses gradients for bandwidth efficiency
-    
-    Example:
-        >>> config = MobileDeviceConfig(client_id="mobile_001")
-        >>> client = MobileFlowerClient(config)
-        >>> 
-        >>> # Generate some local data
-        >>> X, y = np.random.randn(1000, 784), np.random.randint(0, 10, 1000)
-        >>> client.set_local_data(X, y)
-        >>> 
-        >>> # Start federated learning
-        >>> client.start()
-    
-    Attributes:
-        config: Mobile device configuration.
-        model: Local neural network model.
-        pqc_transport: PQC transport layer.
-        training_history: History of local training metrics.
-    """
     
     def __init__(
         self,
         config: MobileDeviceConfig,
         model: Optional[nn.Module] = None,
     ) -> None:
-        """
-        Initialize the mobile FL client.
         
-        Args:
-            config: Device configuration.
-            model: Optional custom model (uses SimpleMobileModel if None).
-        """
         self.config = config
         
         # Initialize model
@@ -229,14 +135,7 @@ class MobileFlowerClient:
         y: NDArray[np.int64],
         validation_split: float = 0.1,
     ) -> None:
-        """
-        Set the local training data for this client.
         
-        Args:
-            X: Feature matrix of shape (n_samples, n_features).
-            y: Label vector of shape (n_samples,).
-            validation_split: Fraction of data for validation.
-        """
         n_samples = len(X)
         n_val = int(n_samples * validation_split)
         
@@ -254,12 +153,7 @@ class MobileFlowerClient:
         )
     
     def get_parameters(self) -> List[NDArray]:
-        """
-        Get current model parameters as numpy arrays.
         
-        Returns:
-            List of parameter arrays.
-        """
         if self.model is None:
             return []
         
@@ -269,12 +163,7 @@ class MobileFlowerClient:
         ]
     
     def set_parameters(self, parameters: List[NDArray]) -> None:
-        """
-        Set model parameters from numpy arrays.
         
-        Args:
-            parameters: List of parameter arrays.
-        """
         if self.model is None:
             return
         
@@ -291,7 +180,7 @@ class MobileFlowerClient:
         y: NDArray,
         batch_size: Optional[int] = None,
     ) -> DataLoader:
-        """Create a PyTorch DataLoader from numpy arrays."""
+        
         if not TORCH_AVAILABLE:
             raise RuntimeError("PyTorch required for training")
         
@@ -316,15 +205,7 @@ class MobileFlowerClient:
         self,
         epochs: Optional[int] = None,
     ) -> Dict[str, float]:
-        """
-        Perform local training on device data.
         
-        Args:
-            epochs: Number of training epochs (uses config if None).
-            
-        Returns:
-            Dictionary with training metrics.
-        """
         if self.model is None or self._local_data is None:
             return {"error": "Model or data not available"}
         
@@ -400,7 +281,7 @@ class MobileFlowerClient:
         X: NDArray,
         y: NDArray,
     ) -> Dict[str, float]:
-        """Evaluate model on given data."""
+        
         if self.model is None:
             return {}
         
@@ -427,17 +308,7 @@ class MobileFlowerClient:
         self,
         parameters: List[NDArray],
     ) -> List[NDArray]:
-        """
-        Apply gradient compression for bandwidth efficiency.
         
-        Uses Top-K sparsification to reduce communication costs.
-        
-        Args:
-            parameters: Original parameter arrays.
-            
-        Returns:
-            Compressed parameter arrays.
-        """
         if not self.config.compress_gradients:
             return parameters
         
@@ -463,15 +334,7 @@ class MobileFlowerClient:
         self,
         parameters: List[NDArray],
     ) -> bytes:
-        """
-        Encrypt model weights using PQC.
         
-        Args:
-            parameters: Model parameters.
-            
-        Returns:
-            Encrypted weight bytes.
-        """
         if self.pqc_transport is None:
             # Fallback: serialize without encryption
             import pickle
@@ -483,15 +346,7 @@ class MobileFlowerClient:
         self,
         data: bytes,
     ) -> bytes:
-        """
-        Sign the update using Dilithium.
         
-        Args:
-            data: Data to sign.
-            
-        Returns:
-            Digital signature.
-        """
         if self.pqc_transport is None:
             # Fallback: HMAC signature
             import hashlib
@@ -505,12 +360,7 @@ class MobileFlowerClient:
         return self.pqc_transport.sign(data)
     
     def start(self) -> None:
-        """
-        Start the Flower client and connect to the FL server.
         
-        This method initiates the federated learning process,
-        connecting to the server and participating in training rounds.
-        """
         if not FLOWER_AVAILABLE:
             logger.error("Flower not available. Cannot start FL client.")
             return
@@ -529,26 +379,15 @@ class MobileFlowerClient:
             client=flower_client.to_client(),
         )
 
-
 class FlowerClientAdapter(NumPyClient):
-    """
-    Adapter to expose MobileFlowerClient as Flower NumPyClient.
     
-    This adapter bridges our MobileFlowerClient implementation
-    with the Flower framework's NumPyClient interface.
-    """
     
     def __init__(self, mobile_client: MobileFlowerClient) -> None:
-        """
-        Initialize the adapter.
         
-        Args:
-            mobile_client: Underlying MobileFlowerClient.
-        """
         self.mobile_client = mobile_client
     
     def get_properties(self, config: Dict[str, Scalar]) -> Dict[str, Scalar]:
-        """Return client properties."""
+        
         return {
             "client_id": self.mobile_client.config.client_id,
             "pqc_enabled": str(self.mobile_client.config.enable_pqc),
@@ -556,7 +395,7 @@ class FlowerClientAdapter(NumPyClient):
         }
     
     def get_parameters(self, config: Dict[str, Scalar]) -> List[NDArray]:
-        """Return current model parameters."""
+        
         return self.mobile_client.get_parameters()
     
     def fit(
@@ -564,16 +403,7 @@ class FlowerClientAdapter(NumPyClient):
         parameters: List[NDArray],
         config: Dict[str, Scalar],
     ) -> Tuple[List[NDArray], int, Dict[str, Scalar]]:
-        """
-        Train model on local data.
         
-        Args:
-            parameters: Global model parameters from server.
-            config: Training configuration from server.
-            
-        Returns:
-            Tuple of (updated_parameters, n_samples, metrics).
-        """
         # Set global parameters
         self.mobile_client.set_parameters(parameters)
         
@@ -603,16 +433,7 @@ class FlowerClientAdapter(NumPyClient):
         parameters: List[NDArray],
         config: Dict[str, Scalar],
     ) -> Tuple[float, int, Dict[str, Scalar]]:
-        """
-        Evaluate model on local validation data.
         
-        Args:
-            parameters: Model parameters to evaluate.
-            config: Evaluation configuration.
-            
-        Returns:
-            Tuple of (loss, n_samples, metrics).
-        """
         self.mobile_client.set_parameters(parameters)
         
         if self.mobile_client._val_data is None:
@@ -627,23 +448,12 @@ class FlowerClientAdapter(NumPyClient):
             {"accuracy": metrics.get("val_accuracy", 0.0)},
         )
 
-
 def run_simulation(
     n_clients: int = 5,
     n_rounds: int = 10,
     samples_per_client: int = 1000,
 ) -> None:
-    """
-    Run a federated learning simulation with multiple mobile clients.
     
-    This function simulates multiple mobile devices participating
-    in federated learning without requiring an actual FL server.
-    
-    Args:
-        n_clients: Number of simulated mobile clients.
-        n_rounds: Number of FL rounds to simulate.
-        samples_per_client: Training samples per client.
-    """
     logger.info(
         f"Starting FL simulation: {n_clients} clients, "
         f"{n_rounds} rounds, {samples_per_client} samples/client"
@@ -722,9 +532,8 @@ def run_simulation(
     
     logger.info("Simulation complete!")
 
-
 def main():
-    """Main entry point for mobile FL client."""
+    
     parser = argparse.ArgumentParser(
         description="Q-Edge Mobile Federated Learning Client"
     )
@@ -784,7 +593,6 @@ def main():
         client.set_local_data(X, y)
         
         client.start()
-
 
 if __name__ == "__main__":
     main()

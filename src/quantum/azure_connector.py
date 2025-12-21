@@ -1,21 +1,3 @@
-"""
-Azure Quantum Connector for Q-Edge Platform
-============================================
-
-This module provides integration with Azure Quantum services for executing
-quantum circuits on real quantum hardware (IonQ, Rigetti, Quantinuum).
-
-Features:
-    - Seamless integration with Azure Quantum workspace
-    - Support for multiple quantum hardware providers
-    - Automatic job submission and result retrieval
-    - Cost estimation and resource management
-    - Secure credential management via Azure Key Vault
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -30,18 +12,16 @@ from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
-
 class QuantumProvider(Enum):
-    """Supported quantum hardware providers on Azure Quantum."""
+    
     
     IONQ = "ionq"
     RIGETTI = "rigetti"
     QUANTINUUM = "quantinuum"
     SIMULATOR = "simulator"
 
-
 class QuantumTarget(Enum):
-    """Available quantum targets for each provider."""
+    
     
     # IonQ targets
     IONQ_SIMULATOR = "ionq.simulator"
@@ -57,21 +37,9 @@ class QuantumTarget(Enum):
     QUANTINUUM_H1 = "quantinuum.qpu.h1-1"
     QUANTINUUM_H2 = "quantinuum.qpu.h2-1"
 
-
 @dataclass
 class AzureQuantumConfig:
-    """Configuration for Azure Quantum connection.
     
-    Attributes:
-        subscription_id: Azure subscription ID.
-        resource_group: Azure resource group name.
-        workspace_name: Azure Quantum workspace name.
-        location: Azure region (e.g., 'eastus', 'westeurope').
-        default_provider: Default quantum hardware provider.
-        default_target: Default quantum target.
-        shots: Default number of measurement shots.
-        timeout_seconds: Job timeout in seconds.
-    """
     
     subscription_id: str
     resource_group: str
@@ -82,9 +50,8 @@ class AzureQuantumConfig:
     shots: int = 1024
     timeout_seconds: int = 600
 
-
 class JobStatus(Enum):
-    """Status of a quantum job."""
+    
     
     WAITING = "waiting"
     EXECUTING = "executing"
@@ -92,22 +59,9 @@ class JobStatus(Enum):
     FAILED = "failed"
     CANCELLED = "cancelled"
 
-
 @dataclass
 class QuantumJobResult:
-    """Result of a quantum job execution.
     
-    Attributes:
-        job_id: Unique identifier for the job.
-        status: Current job status.
-        target: Quantum target used.
-        shots: Number of shots executed.
-        results: Measurement results (histogram of bitstrings).
-        probabilities: Probability distribution.
-        execution_time_ms: Execution time in milliseconds.
-        cost_estimate: Estimated cost in USD.
-        metadata: Additional job metadata.
-    """
     
     job_id: str
     status: JobStatus
@@ -119,45 +73,11 @@ class QuantumJobResult:
     cost_estimate: Optional[float] = None
     metadata: Optional[Dict[str, Any]] = None
 
-
 class AzureQuantumConnector:
-    """
-    Azure Quantum Connector for executing quantum circuits on cloud hardware.
     
-    This class provides a high-level interface to Azure Quantum services,
-    handling authentication, job submission, monitoring, and result retrieval.
-    
-    Security:
-        - Uses DefaultAzureCredential for secure authentication
-        - Supports Azure Key Vault for credential management
-        - No hardcoded credentials or secrets
-    
-    Example:
-        >>> config = AzureQuantumConfig(
-        ...     subscription_id="your-sub-id",
-        ...     resource_group="your-rg",
-        ...     workspace_name="your-workspace",
-        ... )
-        >>> connector = AzureQuantumConnector(config)
-        >>> await connector.connect()
-        >>> 
-        >>> # Submit a circuit
-        >>> result = await connector.submit_circuit(qiskit_circuit, shots=1000)
-        >>> print(result.probabilities)
-    
-    Attributes:
-        config: Azure Quantum configuration.
-        workspace: Azure Quantum workspace object.
-        is_connected: Whether currently connected to Azure.
-    """
     
     def __init__(self, config: AzureQuantumConfig) -> None:
-        """
-        Initialize Azure Quantum Connector.
         
-        Args:
-            config: Azure Quantum configuration.
-        """
         self.config = config
         self._workspace = None
         self._credential = None
@@ -169,15 +89,7 @@ class AzureQuantumConnector:
         )
     
     async def connect(self) -> None:
-        """
-        Establish connection to Azure Quantum workspace.
         
-        Uses DefaultAzureCredential which supports multiple authentication
-        methods including managed identity, CLI, and environment variables.
-        
-        Raises:
-            ConnectionError: If unable to connect to Azure Quantum.
-        """
         try:
             from azure.identity import DefaultAzureCredential
             from azure.quantum import Workspace
@@ -215,19 +127,14 @@ class AzureQuantumConnector:
             raise ConnectionError(f"Azure Quantum connection failed: {e}")
     
     async def disconnect(self) -> None:
-        """Disconnect from Azure Quantum workspace."""
+        
         self._workspace = None
         self._credential = None
         self.is_connected = False
         logger.info("Disconnected from Azure Quantum")
     
     def get_available_targets(self) -> List[str]:
-        """
-        Get list of available quantum targets.
         
-        Returns:
-            List of target names.
-        """
         if not self.is_connected or self._workspace is None:
             # Return default simulator targets for offline mode
             return [
@@ -246,23 +153,7 @@ class AzureQuantumConnector:
         shots: int,
         target: Optional[QuantumTarget] = None,
     ) -> Dict[str, float]:
-        """
-        Estimate cost for executing a quantum circuit.
         
-        Pricing is approximate and varies by provider:
-        - IonQ: ~$0.00003 per single-qubit gate, ~$0.0003 per two-qubit gate
-        - Rigetti: ~$0.00001 per gate
-        - Quantinuum: Credits-based system
-        
-        Args:
-            n_qubits: Number of qubits in circuit.
-            n_gates: Total number of gates.
-            shots: Number of measurement shots.
-            target: Quantum target (uses default if None).
-            
-        Returns:
-            Dictionary with cost breakdown.
-        """
         target = target or self.config.default_target
         target_name = target.value
         
@@ -309,22 +200,7 @@ class AzureQuantumConnector:
         shots: Optional[int] = None,
         target: Optional[QuantumTarget] = None,
     ) -> QuantumJobResult:
-        """
-        Submit a PennyLane circuit to Azure Quantum.
         
-        This method converts a PennyLane circuit to the appropriate format
-        and submits it to the specified Azure Quantum target.
-        
-        Args:
-            circuit_fn: PennyLane QNode or circuit function.
-            params: Circuit parameters.
-            n_qubits: Number of qubits.
-            shots: Number of measurement shots.
-            target: Quantum target.
-            
-        Returns:
-            QuantumJobResult with execution results.
-        """
         import pennylane as qml
         
         shots = shots or self.config.shots
@@ -400,18 +276,7 @@ class AzureQuantumConnector:
         n_qubits: int,
         shots: int,
     ) -> QuantumJobResult:
-        """
-        Run circuit on local simulator when Azure is unavailable.
         
-        Args:
-            circuit_fn: Circuit function.
-            params: Circuit parameters.
-            n_qubits: Number of qubits.
-            shots: Number of shots.
-            
-        Returns:
-            Simulated job result.
-        """
         import pennylane as qml
         import time
         
@@ -457,12 +322,7 @@ class AzureQuantumConnector:
         )
     
     async def _get_ionq_api_key(self) -> str:
-        """
-        Retrieve IonQ API key from Azure Key Vault.
         
-        Returns:
-            IonQ API key string.
-        """
         if not self.is_connected:
             return os.getenv("IONQ_API_KEY", "demo-key")
         
@@ -488,17 +348,7 @@ class AzureQuantumConnector:
         shots: Optional[int] = None,
         target: Optional[QuantumTarget] = None,
     ) -> QuantumJobResult:
-        """
-        Submit a Qiskit circuit to Azure Quantum.
         
-        Args:
-            circuit: Qiskit QuantumCircuit object.
-            shots: Number of measurement shots.
-            target: Quantum target.
-            
-        Returns:
-            QuantumJobResult with execution results.
-        """
         from azure.quantum.qiskit import AzureQuantumProvider
         
         shots = shots or self.config.shots
@@ -541,15 +391,7 @@ class AzureQuantumConnector:
         )
     
     async def get_job_status(self, job_id: str) -> JobStatus:
-        """
-        Get the status of a submitted job.
         
-        Args:
-            job_id: Job identifier.
-            
-        Returns:
-            Current job status.
-        """
         if job_id in self._pending_jobs:
             job = self._pending_jobs[job_id]
             status = job.details.status
@@ -568,15 +410,7 @@ class AzureQuantumConnector:
         return JobStatus.FAILED
     
     async def cancel_job(self, job_id: str) -> bool:
-        """
-        Cancel a pending job.
         
-        Args:
-            job_id: Job identifier.
-            
-        Returns:
-            True if successfully cancelled.
-        """
         if job_id in self._pending_jobs:
             try:
                 self._pending_jobs[job_id].cancel()
@@ -588,15 +422,7 @@ class AzureQuantumConnector:
         return False
     
     def get_provider_info(self, provider: QuantumProvider) -> Dict[str, Any]:
-        """
-        Get information about a quantum hardware provider.
         
-        Args:
-            provider: Quantum provider.
-            
-        Returns:
-            Dictionary with provider details.
-        """
         provider_info = {
             QuantumProvider.IONQ: {
                 "name": "IonQ",

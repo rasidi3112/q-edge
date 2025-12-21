@@ -1,10 +1,4 @@
-"""
-Integration Tests for Q-Edge Backend
-====================================
 
-Tests for the FastAPI backend including API endpoints,
-security middleware, and database operations.
-"""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,16 +8,14 @@ import numpy as np
 # Import the app
 from src.backend.main import app
 
-
 @pytest.fixture
 def client():
-    """Create a test client."""
+    
     return TestClient(app)
-
 
 @pytest.fixture
 def auth_headers():
-    """Generate authentication headers for testing."""
+    
     from src.backend.security import create_jwt_token
     
     token = create_jwt_token(
@@ -33,12 +25,11 @@ def auth_headers():
     
     return {"Authorization": f"Bearer {token}"}
 
-
 class TestHealthEndpoints:
-    """Tests for health check endpoints."""
+    
     
     def test_root_endpoint(self, client):
-        """Test root endpoint returns API info."""
+        
         response = client.get("/")
         
         assert response.status_code == 200
@@ -47,7 +38,7 @@ class TestHealthEndpoints:
         assert "version" in data
     
     def test_health_check(self, client):
-        """Test health check endpoint."""
+        
         response = client.get("/health")
         
         assert response.status_code == 200
@@ -56,12 +47,11 @@ class TestHealthEndpoints:
         assert "services" in data
         assert "timestamp" in data
 
-
 class TestAuthenticationEndpoints:
-    """Tests for authentication endpoints."""
+    
     
     def test_client_registration(self, client):
-        """Test client registration endpoint."""
+        
         registration_data = {
             "client_id": "mobile_001",
             "device_info": {"os": "android", "version": "13"},
@@ -78,7 +68,7 @@ class TestAuthenticationEndpoints:
         assert data["token_type"] == "bearer"
     
     def test_registration_without_signature_fails(self, client):
-        """Test registration fails without signature."""
+        
         registration_data = {
             "client_id": "mobile_001",
             "device_info": {},
@@ -90,12 +80,11 @@ class TestAuthenticationEndpoints:
         
         assert response.status_code == 401
 
-
 class TestFederatedLearningEndpoints:
-    """Tests for federated learning endpoints."""
+    
     
     def test_submit_weights_requires_auth(self, client):
-        """Test weight submission requires authentication."""
+        
         submission = {
             "client_id": "test_client",
             "round_number": 1,
@@ -110,7 +99,7 @@ class TestFederatedLearningEndpoints:
         assert response.status_code in [401, 403]
     
     def test_submit_weights_with_auth(self, client, auth_headers):
-        """Test weight submission with authentication."""
+        
         # First register the client
         registration_data = {
             "client_id": "test_client",
@@ -139,7 +128,7 @@ class TestFederatedLearningEndpoints:
         assert data["status"] == "accepted"
     
     def test_get_global_model_not_found(self, client, auth_headers):
-        """Test getting global model when none exists."""
+        
         # Register client first
         registration_data = {
             "client_id": "test_client",
@@ -155,17 +144,16 @@ class TestFederatedLearningEndpoints:
         assert response.status_code == 404
     
     def test_fl_metrics(self, client):
-        """Test FL metrics endpoint."""
+        
         response = client.get("/fl/metrics")
         
         assert response.status_code == 200
 
-
 class TestQuantumEndpoints:
-    """Tests for quantum computing endpoints."""
+    
     
     def test_submit_quantum_job_requires_auth(self, client):
-        """Test quantum job submission requires auth."""
+        
         job_data = {
             "circuit_type": "vqc",
             "parameters": {"n_qubits": 4},
@@ -178,7 +166,7 @@ class TestQuantumEndpoints:
         assert response.status_code in [401, 403]
     
     def test_submit_quantum_job(self, client, auth_headers):
-        """Test quantum job submission."""
+        
         # Register client
         registration_data = {
             "client_id": "test_client",
@@ -209,25 +197,24 @@ class TestQuantumEndpoints:
         assert "job_id" in data
         assert data["status"] == "pending"
 
-
 class TestSecurityMiddleware:
-    """Tests for security middleware."""
+    
     
     def test_rate_limit_headers(self, client):
-        """Test rate limit headers are present."""
+        
         response = client.get("/")
         
         assert "X-RateLimit-Limit" in response.headers
         assert "X-RateLimit-Remaining" in response.headers
     
     def test_timing_header(self, client):
-        """Test timing header is present."""
+        
         response = client.get("/")
         
         assert "X-Process-Time" in response.headers
     
     def test_pqc_protected_header(self, client, auth_headers):
-        """Test PQC protection headers on authenticated requests."""
+        
         # Register client
         registration_data = {
             "client_id": "test_client",
@@ -242,12 +229,11 @@ class TestSecurityMiddleware:
         # PQC headers should be present
         assert "X-PQC-Protected" in response.headers
 
-
 class TestSecurity:
-    """Tests for security module."""
+    
     
     def test_jwt_token_creation(self):
-        """Test JWT token creation."""
+        
         from src.backend.security import create_jwt_token
         
         token = create_jwt_token(
@@ -259,7 +245,7 @@ class TestSecurity:
         assert len(token) > 0
     
     def test_jwt_token_verification(self):
-        """Test JWT token verification."""
+        
         from src.backend.security import create_jwt_token, verify_jwt_token
         
         token = create_jwt_token(
@@ -273,7 +259,7 @@ class TestSecurity:
         assert payload["session_id"] == "session123"
     
     def test_pqc_provider_keypair_generation(self):
-        """Test PQC keypair generation."""
+        
         from src.backend.security import PQCProvider, PQCAlgorithm
         
         provider = PQCProvider(use_simulation=True)
@@ -284,7 +270,7 @@ class TestSecurity:
         assert len(keypair.public_key) > 0
     
     def test_pqc_encapsulation(self):
-        """Test PQC key encapsulation."""
+        
         from src.backend.security import PQCProvider, PQCAlgorithm
         
         provider = PQCProvider(use_simulation=True)
@@ -300,7 +286,7 @@ class TestSecurity:
         assert len(encapsulated.shared_secret) == 32
     
     def test_pqc_signing(self):
-        """Test PQC digital signatures."""
+        
         from src.backend.security import PQCProvider, PQCAlgorithm
         
         provider = PQCProvider(use_simulation=True)
@@ -321,7 +307,6 @@ class TestSecurity:
         )
         
         assert is_valid
-
 
 # Run tests with: pytest tests/integration/test_backend.py -v
 if __name__ == "__main__":

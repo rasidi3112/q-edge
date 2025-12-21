@@ -1,37 +1,3 @@
-"""
-Quantum Global Aggregator for Federated Learning
-=================================================
-
-This is the core module of Q-Edge platform, implementing the Quantum Global
-Aggregator that combines Federated Learning with Quantum Machine Learning.
-
-The aggregator:
-1. Receives local model weights from mobile edge devices
-2. Uses Quantum Kernel Alignment to find optimal feature representations
-3. Applies Variational Quantum Circuits for global model updates
-4. Employs Quantum Error Mitigation for NISQ stability
-5. Can offload execution to Azure Quantum hardware
-
-Mathematical Foundation:
-    The global model update uses a hybrid quantum-classical approach:
-    
-    θ_global^(t+1) = QVA(Aggregate({θ_i^(t)}), φ)
-    
-    where:
-    - θ_i^(t) are local model weights from client i at round t
-    - Aggregate is weighted aggregation (FedAvg, FedProx, etc.)
-    - QVA is the Quantum Variational Ansatz
-    - φ are the trainable quantum circuit parameters
-
-    The quantum advantage comes from:
-    1. Kernel alignment in exponential feature space
-    2. Quantum-enhanced gradient estimation
-    3. Natural regularization from quantum noise
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -55,9 +21,8 @@ from src.quantum.azure_connector import (
 
 logger = logging.getLogger(__name__)
 
-
 class AggregationStrategy(Enum):
-    """Federated aggregation strategies."""
+    
     
     FEDAVG = "fedavg"           # Weighted average by sample count
     FEDPROX = "fedprox"         # FedAvg with proximal regularization
@@ -66,19 +31,9 @@ class AggregationStrategy(Enum):
     FEDBN = "fedbn"             # Batch normalization handling
     QUANTUM = "quantum"         # Quantum-enhanced aggregation
 
-
 @dataclass
 class LocalModelUpdate:
-    """Container for local model update from a mobile client.
     
-    Attributes:
-        client_id: Unique identifier for the client.
-        weights: Model weights as flattened numpy array.
-        gradients: Optional gradients from local training.
-        n_samples: Number of training samples used.
-        local_loss: Final local training loss.
-        metadata: Additional client metadata.
-    """
     
     client_id: str
     weights: NDArray[np.float64]
@@ -87,19 +42,9 @@ class LocalModelUpdate:
     local_loss: float = 0.0
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-
 @dataclass
 class GlobalModelState:
-    """Container for global model state after aggregation.
     
-    Attributes:
-        weights: Aggregated global model weights.
-        round_number: Current federated learning round.
-        quantum_embedding: Quantum kernel embedding of weights.
-        aggregation_metrics: Metrics from aggregation process.
-        vqc_params: Current VQC parameters.
-        kernel_params: Current kernel feature map parameters.
-    """
     
     weights: NDArray[np.float64]
     round_number: int
@@ -108,24 +53,9 @@ class GlobalModelState:
     vqc_params: Optional[NDArray[np.float64]] = None
     kernel_params: Optional[NDArray[np.float64]] = None
 
-
 @dataclass
 class QuantumAggregatorConfig:
-    """Configuration for Quantum Global Aggregator.
     
-    Attributes:
-        n_qubits: Number of qubits for quantum circuits.
-        vqc_layers: Number of VQC layers.
-        qka_layers: Number of QKA feature map layers.
-        aggregation_strategy: Classical aggregation strategy.
-        use_error_mitigation: Whether to apply quantum error mitigation.
-        zne_scale_factors: Scale factors for ZNE.
-        use_azure_quantum: Whether to use Azure Quantum hardware.
-        azure_config: Azure Quantum configuration.
-        weight_compression_ratio: Compression ratio for weight encoding.
-        quantum_learning_rate: Learning rate for quantum parameters.
-        classical_weight: Weight for classical vs quantum aggregation.
-    """
     
     n_qubits: int = 8
     vqc_layers: int = 4
@@ -141,77 +71,15 @@ class QuantumAggregatorConfig:
     quantum_learning_rate: float = 0.01
     classical_weight: float = 0.7  # 70% classical, 30% quantum
 
-
 class QuantumGlobalAggregator:
-    """
-    Quantum-Enhanced Global Aggregator for Federated Learning.
     
-    This class implements the core functionality of the Q-Edge platform,
-    combining classical federated learning aggregation with quantum
-    machine learning enhancements.
-    
-    Architecture:
-        1. Classical Aggregation Layer:
-           - Receives local model updates from mobile clients
-           - Applies weighted aggregation (FedAvg by default)
-           - Handles weight compression and encoding
-        
-        2. Quantum Kernel Layer:
-           - Computes quantum kernel matrix over weight space
-           - Aligns kernels to optimal feature representations
-           - Provides exponential feature space advantage
-        
-        3. Variational Quantum Layer:
-           - Processes aggregated weights through VQC
-           - Learns optimal quantum transformations
-           - Applies data re-uploading for expressivity
-        
-        4. Error Mitigation Layer:
-           - Applies Zero-Noise Extrapolation (ZNE)
-           - Handles NISQ noise for stability
-           - Enables execution on real quantum hardware
-        
-        5. Azure Quantum Integration:
-           - Offloads to IonQ/Rigetti/Quantinuum hardware
-           - Manages job submission and retrieval
-           - Handles cost optimization
-    
-    Example:
-        >>> config = QuantumAggregatorConfig(n_qubits=8, vqc_layers=4)
-        >>> aggregator = QuantumGlobalAggregator(config)
-        >>> 
-        >>> # Simulate receiving updates from mobile clients
-        >>> updates = [
-        ...     LocalModelUpdate("client_1", weights_1, n_samples=100),
-        ...     LocalModelUpdate("client_2", weights_2, n_samples=150),
-        ... ]
-        >>> 
-        >>> # Perform quantum-enhanced global aggregation
-        >>> global_state = await aggregator.aggregate(updates)
-        >>> print(global_state.weights.shape)
-    
-    Attributes:
-        config: Aggregator configuration.
-        vqc: Variational Quantum Circuit instance.
-        qka: Quantum Kernel Alignment instance.
-        zne: Zero-Noise Extrapolation instance.
-        azure_connector: Azure Quantum connector.
-        global_state: Current global model state.
-        round_history: History of aggregation rounds.
-    """
     
     def __init__(
         self,
         config: QuantumAggregatorConfig,
         seed: Optional[int] = None,
     ) -> None:
-        """
-        Initialize the Quantum Global Aggregator.
         
-        Args:
-            config: Aggregator configuration.
-            seed: Random seed for reproducibility.
-        """
         self.config = config
         self._seed = seed
         self._rng = np.random.default_rng(seed)
@@ -258,12 +126,7 @@ class QuantumGlobalAggregator:
         )
     
     async def connect_azure(self) -> bool:
-        """
-        Establish connection to Azure Quantum if configured.
         
-        Returns:
-            True if connected successfully or not configured.
-        """
         if self.azure_connector is not None:
             try:
                 await self.azure_connector.connect()
@@ -277,21 +140,7 @@ class QuantumGlobalAggregator:
         self,
         updates: Sequence[LocalModelUpdate],
     ) -> NDArray[np.float64]:
-        """
-        Perform classical federated aggregation.
         
-        Implements FedAvg: weighted average by number of samples.
-        
-        θ_global = Σᵢ (nᵢ/n) θᵢ
-        
-        where nᵢ is the number of samples from client i.
-        
-        Args:
-            updates: List of local model updates.
-            
-        Returns:
-            Aggregated weights.
-        """
         strategy = self.config.aggregation_strategy
         
         if strategy == AggregationStrategy.FEDAVG:
@@ -308,15 +157,7 @@ class QuantumGlobalAggregator:
         self,
         updates: Sequence[LocalModelUpdate],
     ) -> NDArray[np.float64]:
-        """
-        FedAvg: Weighted average aggregation.
         
-        Args:
-            updates: Local model updates.
-            
-        Returns:
-            Aggregated weights.
-        """
         total_samples = sum(u.n_samples for u in updates)
         
         if total_samples == 0:
@@ -339,19 +180,7 @@ class QuantumGlobalAggregator:
         updates: Sequence[LocalModelUpdate],
         mu: float = 0.01,
     ) -> NDArray[np.float64]:
-        """
-        FedProx: FedAvg with proximal term.
         
-        The proximal term encourages local updates to stay close
-        to the global model, improving convergence on non-IID data.
-        
-        Args:
-            updates: Local model updates.
-            mu: Proximal coefficient.
-            
-        Returns:
-            Aggregated weights.
-        """
         # First apply FedAvg
         aggregated = self._fedavg(updates)
         
@@ -366,17 +195,7 @@ class QuantumGlobalAggregator:
         self,
         updates: Sequence[LocalModelUpdate],
     ) -> NDArray[np.float64]:
-        """
-        FedOpt: Server-side optimization (simplified FedAdam).
         
-        Uses momentum and adaptive learning rates on the server.
-        
-        Args:
-            updates: Local model updates.
-            
-        Returns:
-            Aggregated weights.
-        """
         # Compute pseudo-gradient
         aggregated_update = self._fedavg(updates)
         
@@ -396,18 +215,7 @@ class QuantumGlobalAggregator:
         self,
         weights: NDArray[np.float64],
     ) -> NDArray[np.float64]:
-        """
-        Compress weights for quantum encoding.
         
-        Uses PCA-like dimensionality reduction to encode weights
-        into a vector suitable for quantum circuit input.
-        
-        Args:
-            weights: Full model weights.
-            
-        Returns:
-            Compressed weight vector of size n_qubits.
-        """
         flat_weights = weights.flatten()
         
         # Target dimension is n_qubits
@@ -438,16 +246,7 @@ class QuantumGlobalAggregator:
         compressed: NDArray[np.float64],
         original_shape: tuple,
     ) -> NDArray[np.float64]:
-        """
-        Expand compressed quantum output to full weight shape.
         
-        Args:
-            compressed: Compressed weight vector from quantum circuit.
-            original_shape: Original weight tensor shape.
-            
-        Returns:
-            Expanded weights matching original shape.
-        """
         n_elements = np.prod(original_shape)
         target_dim = len(compressed)
         
@@ -466,18 +265,7 @@ class QuantumGlobalAggregator:
         self,
         weights: NDArray[np.float64],
     ) -> NDArray[np.float64]:
-        """
-        Apply quantum transformation to weights.
         
-        Uses the VQC to transform the compressed weight representation,
-        learning an optimal feature transformation in Hilbert space.
-        
-        Args:
-            weights: Aggregated classical weights.
-            
-        Returns:
-            Quantum-transformed weights.
-        """
         # Compress weights for quantum encoding
         compressed = self._compress_weights(weights)
         
@@ -500,15 +288,7 @@ class QuantumGlobalAggregator:
         self,
         weights: NDArray[np.float64],
     ) -> NDArray[np.float64]:
-        """
-        Apply quantum transformation using Azure Quantum hardware.
         
-        Args:
-            weights: Aggregated classical weights.
-            
-        Returns:
-            Quantum-transformed weights.
-        """
         if self.azure_connector is None or not self.azure_connector.is_connected:
             # Fall back to local simulation
             return self._quantum_transform(weights)
@@ -537,18 +317,7 @@ class QuantumGlobalAggregator:
         self,
         weights_list: List[NDArray[np.float64]],
     ) -> NDArray[np.float64]:
-        """
-        Compute quantum kernel matrix for weight updates.
         
-        This computes pairwise kernel values between all weight updates,
-        which can be used for weighted aggregation or outlier detection.
-        
-        Args:
-            weights_list: List of weight arrays from clients.
-            
-        Returns:
-            Kernel matrix of shape (n_clients, n_clients).
-        """
         # Compress each weight vector
         compressed_weights = np.array([
             self._compress_weights(w) for w in weights_list
@@ -565,17 +334,7 @@ class QuantumGlobalAggregator:
         circuit_fn: callable,
         params: NDArray[np.float64],
     ) -> NDArray[np.float64]:
-        """
-        Apply quantum error mitigation to circuit output.
         
-        Args:
-            circuit_output: Raw circuit output.
-            circuit_fn: Circuit function for re-execution.
-            params: Circuit parameters.
-            
-        Returns:
-            Error-mitigated output.
-        """
         if self.zne is None:
             return circuit_output
         
@@ -597,23 +356,7 @@ class QuantumGlobalAggregator:
         updates: Sequence[LocalModelUpdate],
         use_quantum: bool = True,
     ) -> GlobalModelState:
-        """
-        Perform quantum-enhanced global model aggregation.
         
-        This is the main entry point for the aggregation pipeline:
-        1. Classical aggregation of local updates
-        2. Quantum kernel alignment for feature optimization
-        3. VQC transformation of aggregated weights
-        4. Error mitigation for NISQ stability
-        5. Hybrid combination of classical and quantum results
-        
-        Args:
-            updates: List of local model updates from mobile clients.
-            use_quantum: Whether to apply quantum enhancement.
-            
-        Returns:
-            GlobalModelState with aggregated weights and metrics.
-        """
         if len(updates) == 0:
             raise ValueError("No updates provided for aggregation")
         
@@ -700,20 +443,7 @@ class QuantumGlobalAggregator:
         labels: NDArray[np.float64],
         n_epochs: int = 10,
     ) -> Dict[str, Any]:
-        """
-        Train the quantum circuit parameters for better aggregation.
         
-        Uses the local update quality (based on labels) to optimize
-        the VQC and kernel parameters.
-        
-        Args:
-            updates: Local model updates with ground truth labels.
-            labels: Quality labels for updates (e.g., validation accuracy).
-            n_epochs: Number of training epochs.
-            
-        Returns:
-            Training results and final metrics.
-        """
         weights_list = [u.weights for u in updates]
         compressed = np.array([self._compress_weights(w) for w in weights_list])
         
@@ -736,12 +466,7 @@ class QuantumGlobalAggregator:
         return training_results
     
     def get_aggregation_metrics(self) -> Dict[str, Any]:
-        """
-        Get comprehensive metrics from aggregation history.
         
-        Returns:
-            Dictionary of aggregation metrics.
-        """
         if len(self.round_history) == 0:
             return {"message": "No aggregation rounds completed"}
         
@@ -757,12 +482,7 @@ class QuantumGlobalAggregator:
         }
     
     def save_state(self, filepath: str) -> None:
-        """
-        Save aggregator state to file.
         
-        Args:
-            filepath: Path to save state.
-        """
         import json
         
         state = {
@@ -788,15 +508,7 @@ class QuantumGlobalAggregator:
     
     @classmethod
     def load_state(cls, filepath: str) -> "QuantumGlobalAggregator":
-        """
-        Load aggregator state from file.
         
-        Args:
-            filepath: Path to load state from.
-            
-        Returns:
-            Restored QuantumGlobalAggregator instance.
-        """
         import json
         
         with open(filepath, "r") as f:

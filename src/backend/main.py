@@ -1,21 +1,3 @@
-"""
-FastAPI Main Application for Q-Edge Platform
-=============================================
-
-This module provides the main FastAPI application for the Q-Edge platform,
-handling secure communication, federated learning coordination, and
-quantum job management.
-
-Security Features:
-- Post-Quantum Cryptography (PQC) using Kyber/Dilithium
-- Azure Key Vault for secret management
-- JWT-based authentication
-- Rate limiting and CORS protection
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import logging
@@ -63,19 +45,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 # Pydantic models for API
 class ClientRegistration(BaseModel):
-    """Client registration request."""
+    
     
     client_id: str = Field(..., description="Unique client identifier")
     device_info: Dict[str, Any] = Field(default_factory=dict)
     public_key: str = Field(..., description="PQC public key (Kyber)")
     signature: str = Field(..., description="Registration signature (Dilithium)")
 
-
 class ClientAuthResponse(BaseModel):
-    """Client authentication response."""
+    
     
     access_token: str
     token_type: str = "bearer"
@@ -83,9 +63,8 @@ class ClientAuthResponse(BaseModel):
     server_public_key: str
     session_id: str
 
-
 class ModelWeightsSubmission(BaseModel):
-    """Local model weights submission from mobile client."""
+    
     
     client_id: str
     round_number: int
@@ -94,9 +73,8 @@ class ModelWeightsSubmission(BaseModel):
     local_loss: float
     encrypted_metadata: Optional[str] = None
 
-
 class AggregationResult(BaseModel):
-    """Global aggregation result."""
+    
     
     round_number: int
     global_weights: List[float]
@@ -104,18 +82,16 @@ class AggregationResult(BaseModel):
     metrics: Dict[str, Any]
     timestamp: str
 
-
 class QuantumJobSubmission(BaseModel):
-    """Quantum job submission request."""
+    
     
     circuit_type: str = Field(..., description="Type of quantum circuit")
     parameters: Dict[str, Any] = Field(default_factory=dict)
     target_hardware: str = Field(default="simulator")
     shots: int = Field(default=1024, ge=1, le=10000)
 
-
 class QuantumJobStatus(BaseModel):
-    """Quantum job status response."""
+    
     
     job_id: str
     status: str
@@ -123,15 +99,13 @@ class QuantumJobStatus(BaseModel):
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
 
-
 class HealthCheckResponse(BaseModel):
-    """Health check response."""
+    
     
     status: str
     version: str
     timestamp: str
     services: Dict[str, str]
-
 
 # Global state
 quantum_aggregator: Optional[QuantumGlobalAggregator] = None
@@ -139,10 +113,9 @@ key_vault_manager: Optional[AzureKeyVaultManager] = None
 registered_clients: Dict[str, Dict[str, Any]] = {}
 current_round_updates: List[LocalModelUpdate] = []
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager."""
+    
     global quantum_aggregator, key_vault_manager
     
     logger.info("Starting Q-Edge Backend...")
@@ -172,7 +145,6 @@ async def lifespan(app: FastAPI):
     if key_vault_manager:
         await key_vault_manager.disconnect()
 
-
 # Create FastAPI application
 app = FastAPI(
     title="Q-Edge API",
@@ -194,7 +166,6 @@ app = FastAPI(
 # Security
 security = HTTPBearer()
 
-
 # CORS configuration
 cors_origins = os.getenv("CORS_ORIGINS", '["http://localhost:3000"]')
 import json
@@ -211,11 +182,10 @@ app.add_middleware(
 # Add PQC authentication middleware
 app.add_middleware(PQCAuthMiddleware)
 
-
 # Rate limiting middleware
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    """Simple rate limiting middleware."""
+    
     client_ip = request.client.host if request.client else "unknown"
     
     # In production, use Redis for distributed rate limiting
@@ -227,26 +197,20 @@ async def rate_limit_middleware(request: Request, call_next):
     
     return response
 
-
 # Request timing middleware
 @app.middleware("http")
 async def timing_middleware(request: Request, call_next):
-    """Add timing information to responses."""
+    
     start_time = time.time()
     response = await call_next(request)
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = f"{process_time:.4f}"
     return response
 
-
 # Health endpoints
 @app.get("/health", response_model=HealthCheckResponse, tags=["Health"])
 async def health_check() -> HealthCheckResponse:
-    """
-    Health check endpoint.
     
-    Returns the current status of the API and its dependent services.
-    """
     services = {
         "api": "healthy",
         "quantum_aggregator": "healthy" if quantum_aggregator else "unavailable",
@@ -265,17 +229,15 @@ async def health_check() -> HealthCheckResponse:
         services=services,
     )
 
-
 @app.get("/", tags=["Health"])
 async def root():
-    """Root endpoint with API information."""
+    
     return {
         "name": "Q-Edge API",
         "version": "1.0.0",
         "description": "Federated Hybrid Quantum-Neural Network Platform",
         "documentation": "/docs",
     }
-
 
 # Authentication endpoints
 @app.post(
@@ -284,17 +246,7 @@ async def root():
     tags=["Authentication"],
 )
 async def register_client(registration: ClientRegistration) -> ClientAuthResponse:
-    """
-    Register a new mobile client with PQC authentication.
     
-    The client must provide:
-    - A unique client ID
-    - A Kyber public key for key encapsulation
-    - A Dilithium signature for verification
-    
-    Returns an access token and the server's public key for
-    establishing a PQC-secured communication channel.
-    """
     logger.info(f"Registering client: {registration.client_id}")
     
     # Verify Dilithium signature (simulated)
@@ -335,11 +287,10 @@ async def register_client(registration: ClientRegistration) -> ClientAuthRespons
         session_id=session_id,
     )
 
-
 async def get_current_client(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> Dict[str, Any]:
-    """Dependency for authenticating requests."""
+    
     token = credentials.credentials
     
     try:
@@ -364,7 +315,6 @@ async def get_current_client(
             detail=f"Invalid token: {str(e)}",
         )
 
-
 # Federated Learning endpoints
 @app.post(
     "/fl/submit-weights",
@@ -375,12 +325,7 @@ async def submit_weights(
     submission: ModelWeightsSubmission,
     client: Dict[str, Any] = Depends(get_current_client),
 ) -> Dict[str, Any]:
-    """
-    Submit local model weights from a mobile client.
     
-    The weights are encrypted using the established PQC channel
-    and stored for aggregation when enough clients have submitted.
-    """
     if submission.client_id != client["client_id"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -409,7 +354,6 @@ async def submit_weights(
         "timestamp": datetime.utcnow().isoformat(),
     }
 
-
 @app.post(
     "/fl/trigger-aggregation",
     response_model=AggregationResult,
@@ -418,12 +362,7 @@ async def submit_weights(
 async def trigger_aggregation(
     client: Dict[str, Any] = Depends(get_current_client),
 ) -> AggregationResult:
-    """
-    Trigger global model aggregation.
     
-    This endpoint initiates the quantum-enhanced aggregation process,
-    combining all submitted local model updates.
-    """
     global current_round_updates
     
     if len(current_round_updates) == 0:
@@ -461,7 +400,6 @@ async def trigger_aggregation(
         timestamp=datetime.utcnow().isoformat(),
     )
 
-
 @app.get(
     "/fl/global-model",
     response_model=Dict[str, Any],
@@ -470,12 +408,7 @@ async def trigger_aggregation(
 async def get_global_model(
     client: Dict[str, Any] = Depends(get_current_client),
 ) -> Dict[str, Any]:
-    """
-    Get the current global model weights.
     
-    Mobile clients can call this endpoint to synchronize their
-    local models with the latest global model.
-    """
     if quantum_aggregator.global_state is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -491,21 +424,14 @@ async def get_global_model(
         "timestamp": datetime.utcnow().isoformat(),
     }
 
-
 @app.get(
     "/fl/metrics",
     response_model=Dict[str, Any],
     tags=["Federated Learning"],
 )
 async def get_fl_metrics() -> Dict[str, Any]:
-    """
-    Get federated learning metrics.
     
-    Returns metrics from the aggregation history including
-    convergence information and quantum enhancement statistics.
-    """
     return quantum_aggregator.get_aggregation_metrics()
-
 
 # Quantum job endpoints
 @app.post(
@@ -517,12 +443,7 @@ async def submit_quantum_job(
     job: QuantumJobSubmission,
     client: Dict[str, Any] = Depends(get_current_client),
 ) -> QuantumJobStatus:
-    """
-    Submit a quantum computing job.
     
-    Jobs are processed asynchronously using Celery workers.
-    Use the GET endpoint to check job status.
-    """
     logger.info(
         f"Submitting quantum job: {job.circuit_type} "
         f"on {job.target_hardware}"
@@ -542,7 +463,6 @@ async def submit_quantum_job(
         progress=0.0,
     )
 
-
 @app.get(
     "/quantum/job/{job_id}",
     response_model=QuantumJobStatus,
@@ -552,11 +472,7 @@ async def get_quantum_job_status(
     job_id: str,
     client: Dict[str, Any] = Depends(get_current_client),
 ) -> QuantumJobStatus:
-    """
-    Get the status of a quantum job.
     
-    Returns the current status, progress, and results (if completed).
-    """
     status_info = get_task_status(job_id)
     
     return QuantumJobStatus(
@@ -567,24 +483,22 @@ async def get_quantum_job_status(
         error=status_info.get("error"),
     )
 
-
 # Admin endpoints (protected)
 @app.get("/admin/clients", tags=["Admin"])
 async def list_clients(
     client: Dict[str, Any] = Depends(get_current_client),
 ) -> Dict[str, Any]:
-    """List all registered clients (admin only)."""
+    
     return {
         "total_clients": len(registered_clients),
         "clients": list(registered_clients.keys()),
     }
 
-
 @app.get("/admin/aggregator-state", tags=["Admin"])
 async def get_aggregator_state(
     client: Dict[str, Any] = Depends(get_current_client),
 ) -> Dict[str, Any]:
-    """Get quantum aggregator internal state (admin only)."""
+    
     return {
         "current_round": quantum_aggregator._current_round,
         "vqc_params_count": quantum_aggregator.vqc.num_params,
@@ -592,9 +506,8 @@ async def get_aggregator_state(
         "history_length": len(quantum_aggregator.round_history),
     }
 
-
 def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
-    """Run the FastAPI server."""
+    
     import uvicorn
     
     uvicorn.run(
@@ -604,7 +517,6 @@ def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
         reload=os.getenv("DEBUG_MODE", "false").lower() == "true",
         workers=1,
     )
-
 
 if __name__ == "__main__":
     run_server()

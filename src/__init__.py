@@ -1,15 +1,4 @@
-"""
-Q-Edge: Federated Hybrid Quantum-Neural Network Platform
-=========================================================
 
-A production-ready platform for mobile-edge environments combining:
-- Federated Learning (FL)
-- Quantum Machine Learning (QML)
-- Post-Quantum Cryptography (PQC)
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
 
 __version__ = "1.0.0"
 __author__ = "Ahmad Rasidi (Roy)"

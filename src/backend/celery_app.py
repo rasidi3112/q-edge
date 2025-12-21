@@ -1,19 +1,4 @@
-"""
-Celery Application for Asynchronous Quantum Job Processing
-===========================================================
 
-This module configures Celery for handling long-running quantum computing
-jobs asynchronously. Jobs are submitted to the queue and processed by
-distributed workers.
-
-Architecture:
-- RabbitMQ: Message broker for job distribution
-- Redis: Result backend for job results
-- Workers: Process quantum aggregation and circuit execution
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
 
 from __future__ import annotations
 
@@ -94,9 +79,8 @@ celery_app.conf.update(
     },
 )
 
-
 class QuantumTask(Task):
-    """Base task class for quantum computing tasks."""
+    
     
     abstract = True
     max_retries = 3
@@ -105,20 +89,19 @@ class QuantumTask(Task):
     retry_jitter = True
     
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """Handle task failure."""
+        
         logger.error(
             f"Quantum task {task_id} failed: {exc}",
             exc_info=einfo,
         )
     
     def on_success(self, retval, task_id, args, kwargs):
-        """Handle task success."""
+        
         logger.info(f"Quantum task {task_id} completed successfully")
     
     def on_retry(self, exc, task_id, args, kwargs, einfo):
-        """Handle task retry."""
+        
         logger.warning(f"Quantum task {task_id} retrying: {exc}")
-
 
 @celery_app.task(base=QuantumTask, bind=True, name="submit_quantum_aggregation")
 def submit_quantum_aggregation(
@@ -128,22 +111,7 @@ def submit_quantum_aggregation(
     target: str = "simulator",
     shots: int = 1024,
 ) -> Dict[str, Any]:
-    """
-    Execute quantum aggregation task.
     
-    This task runs the quantum global aggregation process,
-    optionally offloading to Azure Quantum hardware.
-    
-    Args:
-        self: Celery task instance.
-        circuit_type: Type of quantum circuit to execute.
-        parameters: Circuit parameters.
-        target: Quantum target (simulator or hardware).
-        shots: Number of measurement shots.
-        
-    Returns:
-        Aggregation results.
-    """
     logger.info(
         f"Starting quantum aggregation: circuit={circuit_type}, "
         f"target={target}, shots={shots}"
@@ -232,7 +200,6 @@ def submit_quantum_aggregation(
             "timestamp": datetime.utcnow().isoformat(),
         }
 
-
 @celery_app.task(base=QuantumTask, bind=True, name="execute_quantum_circuit")
 def execute_quantum_circuit(
     self,
@@ -240,18 +207,7 @@ def execute_quantum_circuit(
     target: str = "simulator",
     shots: int = 1024,
 ) -> Dict[str, Any]:
-    """
-    Execute a quantum circuit on specified backend.
     
-    Args:
-        self: Celery task instance.
-        circuit_definition: Circuit specification.
-        target: Quantum target.
-        shots: Number of shots.
-        
-    Returns:
-        Circuit execution results.
-    """
     logger.info(f"Executing quantum circuit on {target}")
     
     start_time = time.time()
@@ -313,7 +269,6 @@ def execute_quantum_circuit(
             "timestamp": datetime.utcnow().isoformat(),
         }
 
-
 @celery_app.task(bind=True, name="process_federated_update")
 def process_federated_update(
     self,
@@ -322,19 +277,7 @@ def process_federated_update(
     n_samples: int,
     local_loss: float,
 ) -> Dict[str, Any]:
-    """
-    Process a federated learning update from a mobile client.
     
-    Args:
-        self: Celery task instance.
-        client_id: Client identifier.
-        weights: Model weights.
-        n_samples: Number of training samples.
-        local_loss: Local training loss.
-        
-    Returns:
-        Processing result.
-    """
     logger.info(f"Processing federated update from {client_id}")
     
     # Validate weights
@@ -367,15 +310,9 @@ def process_federated_update(
         "timestamp": datetime.utcnow().isoformat(),
     }
 
-
 @celery_app.task(name="cleanup_expired_jobs")
 def cleanup_expired_jobs() -> Dict[str, Any]:
-    """
-    Periodic task to clean up expired job results.
     
-    Returns:
-        Cleanup statistics.
-    """
     logger.info("Running job cleanup...")
     
     # In production, would clean up Redis/database entries
@@ -385,15 +322,9 @@ def cleanup_expired_jobs() -> Dict[str, Any]:
         "timestamp": datetime.utcnow().isoformat(),
     }
 
-
 @celery_app.task(name="sync_hardware_status")
 def sync_hardware_status() -> Dict[str, Any]:
-    """
-    Periodic task to sync quantum hardware availability status.
     
-    Returns:
-        Hardware status information.
-    """
     logger.info("Syncing quantum hardware status...")
     
     # Would query Azure Quantum for hardware status
@@ -412,17 +343,8 @@ def sync_hardware_status() -> Dict[str, Any]:
         "timestamp": datetime.utcnow().isoformat(),
     }
 
-
 def get_task_status(task_id: str) -> Dict[str, Any]:
-    """
-    Get the status of a Celery task.
     
-    Args:
-        task_id: Celery task ID.
-        
-    Returns:
-        Task status information.
-    """
     result = AsyncResult(task_id, app=celery_app)
     
     status_info = {
@@ -446,15 +368,13 @@ def get_task_status(task_id: str) -> Dict[str, Any]:
     
     return status_info
 
-
 def run_worker():
-    """Run the Celery worker."""
+    
     celery_app.worker_main([
         "worker",
         "--loglevel=info",
         "-Q", "quantum,federated,celery",
     ])
-
 
 if __name__ == "__main__":
     run_worker()

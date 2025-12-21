@@ -1,36 +1,3 @@
-"""
-Quantum Error Mitigation (QEM) for NISQ Devices
-===============================================
-
-This module implements error mitigation techniques to improve the accuracy
-of quantum computations on Noisy Intermediate-Scale Quantum (NISQ) devices.
-
-Implemented Techniques:
-    1. Zero-Noise Extrapolation (ZNE)
-    2. Probabilistic Error Cancellation (PEC)
-    3. Measurement Error Mitigation
-    4. Dynamical Decoupling
-
-Mathematical Foundation:
-    Zero-Noise Extrapolation estimates the zero-noise expectation value
-    by running circuits at multiple noise levels λ and extrapolating:
-    
-    ⟨O⟩₀ = lim_{λ→0} ⟨O⟩_λ
-    
-    The noise scaling is achieved through unitary folding:
-    G → G·G†·G (local folding) or U → U·U†·U (global folding)
-
-References:
-    - Temme et al. (2017): "Error Mitigation for Short-Depth Quantum Circuits"
-    - Li & Benjamin (2017): "Efficient Variational Quantum Simulator 
-      Incorporating Active Error Minimization"
-    - Kandala et al. (2019): "Error mitigation extends the computational 
-      reach of a noisy quantum processor"
-
-Author: Ahmad Rasidi (Roy)
-License: Apache-2.0
-"""
-
 from __future__ import annotations
 
 import logging
@@ -45,17 +12,15 @@ from scipy.optimize import curve_fit
 
 logger = logging.getLogger(__name__)
 
-
 class FoldingMethod(Enum):
-    """Circuit folding methods for noise amplification."""
+    
     
     GLOBAL = "global"       # Fold entire circuit: U → U·U†·U
     LOCAL = "local"         # Fold individual gates: G → G·G†·G
     RANDOM = "random"       # Randomly select gates to fold
 
-
 class ExtrapolationMethod(Enum):
-    """Extrapolation methods for zero-noise estimation."""
+    
     
     LINEAR = "linear"               # Linear extrapolation
     POLYNOMIAL = "polynomial"       # Polynomial fit
@@ -63,19 +28,9 @@ class ExtrapolationMethod(Enum):
     RICHARDSON = "richardson"       # Richardson extrapolation
     ADAPTIVE = "adaptive"           # Adaptive method selection
 
-
 @dataclass
 class ZNEConfig:
-    """Configuration for Zero-Noise Extrapolation.
     
-    Attributes:
-        scale_factors: Noise amplification factors.
-        folding_method: Method for circuit folding.
-        extrapolation_method: Method for zero-noise extrapolation.
-        poly_degree: Polynomial degree (if using polynomial extrapolation).
-        n_shots_per_scale: Number of shots per noise scale.
-        random_seed: Seed for reproducibility.
-    """
     
     scale_factors: Sequence[float] = field(
         default_factory=lambda: [1.0, 1.5, 2.0, 2.5, 3.0]
@@ -87,7 +42,7 @@ class ZNEConfig:
     random_seed: Optional[int] = None
     
     def __post_init__(self) -> None:
-        """Validate configuration."""
+        
         if len(self.scale_factors) < 2:
             raise ValueError("At least 2 scale factors required for extrapolation")
         if min(self.scale_factors) < 1.0:
@@ -96,57 +51,11 @@ class ZNEConfig:
                    for i in range(len(self.scale_factors) - 1)):
             raise ValueError("Scale factors must be strictly increasing")
 
-
 class ZeroNoiseExtrapolation:
-    """
-    Zero-Noise Extrapolation for Quantum Error Mitigation.
     
-    ZNE is a leading error mitigation technique that estimates the ideal
-    (noise-free) expectation value by executing a quantum circuit at
-    multiple noise levels and extrapolating to zero noise.
-    
-    The key insight is that while we cannot reduce hardware noise directly,
-    we can artificially amplify it in a controlled way and then extrapolate
-    backwards to estimate the zero-noise limit.
-    
-    Noise Amplification Methods:
-        - Global Folding: U → U(U†U)^n, where n controls noise level
-        - Local Folding: Apply G → G(G†G)^n to selected gates
-        - Random Folding: Randomly select gates to fold
-    
-    Extrapolation Methods:
-        - Linear: f(λ) = a + bλ, extrapolate to λ=0
-        - Polynomial: f(λ) = Σᵢ aᵢλⁱ
-        - Exponential: f(λ) = a·exp(-bλ) + c
-        - Richardson: Weighted combination of noisy values
-    
-    Example:
-        >>> config = ZNEConfig(scale_factors=[1.0, 2.0, 3.0])
-        >>> zne = ZeroNoiseExtrapolation(config)
-        >>> 
-        >>> # Define your quantum circuit
-        >>> @qml.qnode(dev)
-        >>> def circuit(params):
-        ...     qml.RX(params[0], wires=0)
-        ...     qml.RY(params[1], wires=1)
-        ...     qml.CNOT(wires=[0, 1])
-        ...     return qml.expval(qml.PauliZ(0))
-        >>> 
-        >>> # Get mitigated expectation value
-        >>> mitigated_value = zne.mitigate(circuit, params)
-    
-    Attributes:
-        config: ZNE configuration.
-        extrapolation_history: History of extrapolation results.
-    """
     
     def __init__(self, config: ZNEConfig) -> None:
-        """
-        Initialize Zero-Noise Extrapolation.
         
-        Args:
-            config: ZNE configuration object.
-        """
         self.config = config
         self._rng = np.random.default_rng(config.random_seed)
         self.extrapolation_history: list[dict[str, Any]] = []
@@ -161,21 +70,7 @@ class ZeroNoiseExtrapolation:
         tape: qml.tape.QuantumTape,
         scale_factor: float,
     ) -> qml.tape.QuantumTape:
-        """
-        Apply global unitary folding to amplify noise.
         
-        Global folding transforms U → U(U†U)^n where n is determined
-        by the scale factor: λ = 1 + 2n (for integer n).
-        
-        For non-integer n, we use partial folding on a subset of gates.
-        
-        Args:
-            tape: Original quantum tape.
-            scale_factor: Noise amplification factor (λ ≥ 1).
-            
-        Returns:
-            Folded quantum tape with amplified noise.
-        """
         if scale_factor == 1.0:
             return tape
         
@@ -219,19 +114,7 @@ class ZeroNoiseExtrapolation:
         tape: qml.tape.QuantumTape,
         scale_factor: float,
     ) -> qml.tape.QuantumTape:
-        """
-        Apply local gate folding to amplify noise.
         
-        Local folding transforms individual gates G → G(G†G)^n.
-        This provides more fine-grained control over noise amplification.
-        
-        Args:
-            tape: Original quantum tape.
-            scale_factor: Target noise amplification factor.
-            
-        Returns:
-            Folded quantum tape.
-        """
         if scale_factor == 1.0:
             return tape
         
@@ -273,18 +156,7 @@ class ZeroNoiseExtrapolation:
         scale_factor: float,
         device: qml.Device,
     ) -> float:
-        """
-        Execute circuit at a specific noise scale.
         
-        Args:
-            circuit: Quantum circuit function.
-            params: Circuit parameters.
-            scale_factor: Noise amplification factor.
-            device: PennyLane device for execution.
-            
-        Returns:
-            Expectation value at the given noise scale.
-        """
         if scale_factor == 1.0:
             # No folding needed
             return float(circuit(params))
@@ -314,7 +186,7 @@ class ZeroNoiseExtrapolation:
         scales: NDArray[np.float64],
         values: NDArray[np.float64],
     ) -> float:
-        """Linear extrapolation to zero noise."""
+        
         coeffs = np.polyfit(scales, values, 1)
         return float(coeffs[1])  # y-intercept
     
@@ -323,7 +195,7 @@ class ZeroNoiseExtrapolation:
         scales: NDArray[np.float64],
         values: NDArray[np.float64],
     ) -> float:
-        """Polynomial extrapolation to zero noise."""
+        
         degree = min(self.config.poly_degree, len(scales) - 1)
         coeffs = np.polyfit(scales, values, degree)
         return float(coeffs[-1])  # y-intercept (λ=0)
@@ -333,7 +205,7 @@ class ZeroNoiseExtrapolation:
         scales: NDArray[np.float64],
         values: NDArray[np.float64],
     ) -> float:
-        """Exponential decay extrapolation."""
+        
         def exp_model(x: NDArray, a: float, b: float, c: float) -> NDArray:
             return a * np.exp(-b * x) + c
         
@@ -352,12 +224,7 @@ class ZeroNoiseExtrapolation:
         scales: NDArray[np.float64],
         values: NDArray[np.float64],
     ) -> float:
-        """
-        Richardson extrapolation for improved accuracy.
         
-        Richardson extrapolation uses weighted combinations of values
-        at different noise scales to eliminate leading-order errors.
-        """
         n = len(scales)
         
         # Build the Vandermonde-like matrix
@@ -384,12 +251,7 @@ class ZeroNoiseExtrapolation:
         scales: NDArray[np.float64],
         values: NDArray[np.float64],
     ) -> Tuple[float, str]:
-        """
-        Adaptively select the best extrapolation method.
         
-        Compares different methods using cross-validation and selects
-        the one with lowest error.
-        """
         methods = {
             "linear": self._fit_linear,
             "polynomial": self._fit_polynomial,
@@ -433,20 +295,7 @@ class ZeroNoiseExtrapolation:
         scales: NDArray[np.float64],
         values: NDArray[np.float64],
     ) -> dict[str, Any]:
-        """
-        Extrapolate to zero noise from noisy measurements.
         
-        Args:
-            scales: Noise scale factors used.
-            values: Measured expectation values at each scale.
-            
-        Returns:
-            Dictionary containing:
-                - mitigated_value: Extrapolated zero-noise value
-                - method_used: Extrapolation method used
-                - confidence: Confidence estimate
-                - raw_data: Original scales and values
-        """
         scales = np.array(scales)
         values = np.array(values)
         
@@ -495,21 +344,7 @@ class ZeroNoiseExtrapolation:
         params: Any,
         device: Optional[qml.Device] = None,
     ) -> dict[str, Any]:
-        """
-        Apply zero-noise extrapolation to mitigate errors in a quantum circuit.
         
-        This is the main entry point for error mitigation. It:
-        1. Executes the circuit at multiple noise scales
-        2. Extrapolates to estimate the zero-noise value
-        
-        Args:
-            circuit: Quantum circuit function (QNode).
-            params: Parameters to pass to the circuit.
-            device: PennyLane device (uses circuit's device if None).
-            
-        Returns:
-            Mitigation results including the estimated ideal value.
-        """
         if device is None:
             device = circuit.device
         
@@ -538,23 +373,8 @@ class ZeroNoiseExtrapolation:
         
         return result
 
-
 class MeasurementErrorMitigation:
-    """
-    Measurement Error Mitigation using calibration matrices.
     
-    This class implements readout error mitigation by characterizing
-    the measurement channel and applying its inverse.
-    
-    The idea is to measure all basis states to build a calibration
-    matrix C where C[i,j] = P(measure j | prepared i), then apply
-    C^{-1} to measured probabilities to recover ideal distribution.
-    
-    Example:
-        >>> mem = MeasurementErrorMitigation(n_qubits=2)
-        >>> mem.calibrate(device)  # Measure calibration circuits
-        >>> mitigated_probs = mem.mitigate(measured_probs)
-    """
     
     def __init__(
         self,
@@ -562,14 +382,7 @@ class MeasurementErrorMitigation:
         n_shots: int = 8192,
         method: str = "inverse",
     ) -> None:
-        """
-        Initialize measurement error mitigation.
         
-        Args:
-            n_qubits: Number of qubits.
-            n_shots: Shots for calibration measurements.
-            method: Mitigation method ('inverse', 'least_squares', 'iterative').
-        """
         self.n_qubits = n_qubits
         self.n_shots = n_shots
         self.method = method
@@ -579,15 +392,7 @@ class MeasurementErrorMitigation:
         self._is_calibrated = False
     
     def calibrate(self, device: qml.Device) -> None:
-        """
-        Perform calibration measurements to characterize readout errors.
         
-        Prepares all 2^n computational basis states and measures to
-        build the calibration matrix.
-        
-        Args:
-            device: PennyLane device to calibrate.
-        """
         n_states = 2 ** self.n_qubits
         self.calibration_matrix = np.zeros((n_states, n_states))
         
@@ -616,15 +421,7 @@ class MeasurementErrorMitigation:
         logger.info(f"Calibration complete. Readout fidelity: {np.mean(np.diag(self.calibration_matrix)):.4f}")
     
     def mitigate(self, measured_probs: NDArray[np.float64]) -> NDArray[np.float64]:
-        """
-        Apply measurement error mitigation to measured probabilities.
         
-        Args:
-            measured_probs: Measured probability distribution.
-            
-        Returns:
-            Mitigated probability distribution.
-        """
         if not self._is_calibrated:
             raise RuntimeError("Must call calibrate() before mitigating")
         
@@ -666,12 +463,7 @@ class MeasurementErrorMitigation:
         return mitigated
     
     def get_readout_fidelity(self) -> float:
-        """
-        Get average readout fidelity from calibration.
         
-        Returns:
-            Average fidelity (diagonal elements of calibration matrix).
-        """
         if not self._is_calibrated:
             raise RuntimeError("Must call calibrate() first")
         
