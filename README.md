@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🔮 Q-Edge
+# Q-Edge
 
 ### Federated Hybrid Quantum-Neural Network Platform
 
-<img src="https://img.shields.io/badge/🔬_Research_Project-Quantum_ML-6C63FF?style=for-the-badge" alt="Research"/>
+<img src="https://img.shields.io/badge/Research_Project-Quantum_ML-6C63FF?style=for-the-badge" alt="Research"/>
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![PennyLane](https://img.shields.io/badge/PennyLane-Quantum-00D4AA?style=for-the-badge&logo=atom&logoColor=white)](https://pennylane.ai)
@@ -19,71 +19,71 @@
 
 **Exploring the future of AI: Where Quantum Computing meets Federated Learning**
 
-*🚧 Research/Educational Project — Not Production Ready*
+*Research/Educational Project — Not Production Ready*
 
 <br/>
 
-[📖 Documentation](#-quick-start) • [🚀 Quick Start](#-quick-start) • [🤝 Contributing](#-contributing) • [📜 License](#-license)
+[Documentation](#-quick-start) • [Quick Start](#-quick-start) • [Contributing](#-contributing) • [License](#-license)
 
 </div>
 
 ---
 
-## 🌟 What is Q-Edge?
+## What is Q-Edge?
 
 Q-Edge is an **experimental platform** that explores the intersection of three cutting-edge technologies:
 
 | Technology | Description | Status |
 |------------|-------------|--------|
-| 🧠 **Federated Learning** | Distributed ML without exposing raw data | ✅ Simulated |
-| ⚛️ **Quantum ML** | Variational Quantum Circuits (VQC) & Quantum Kernel | ✅ PennyLane Simulator |
-| 🔐 **Post-Quantum Crypto** | Kyber & Dilithium (NIST standards) | ⚠️ Placeholder |
-| ☁️ **Azure Quantum** | Cloud quantum hardware integration | 📝 Code Ready |
+| **Federated Learning** | Distributed ML without exposing raw data | Simulated |
+| **Quantum ML** | Variational Quantum Circuits (VQC) & Quantum Kernel | PennyLane Simulator |
+| **Post-Quantum Crypto** | Kyber & Dilithium (NIST standards) | Placeholder |
+| **Azure Quantum** | Cloud quantum hardware integration | Code Ready |
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Q-EDGE ARCHITECTURE                       │
+│                        Q-EDGE ARCHITECTURE                      │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   📱 Mobile Clients          🖥️ Backend            ⚛️ Quantum   │
-│   ┌─────────────┐           ┌─────────────┐      ┌───────────┐ │
-│   │ Flutter App │ ──PQC──▶ │  FastAPI    │ ───▶ │ PennyLane │ │
-│   │ FL Client   │           │  + Celery   │      │ Circuits  │ │
-│   └─────────────┘           └─────────────┘      └───────────┘ │
-│                                                                  │
-│   🔒 Security: Kyber-1024 KEM + Dilithium-5 Signatures          │
-│   📊 Aggregation: FedAvg + Quantum-Enhanced                     │
-│   🛠️ Error Mitigation: Zero-Noise Extrapolation                │
-│                                                                  │
+│                                                                 │
+│   Mobile Clients            Backend              Quantum        │
+│   ┌─────────────┐          ┌─────────────┐      ┌───────────┐   │
+│   │ Flutter App │ ──PQC──▶ │  FastAPI    │ ───▶ │ PennyLane │   │
+│   │ FL Client   │          │  + Celery   │      │ Circuits  │   │
+│   └─────────────┘          └─────────────┘      └───────────┘   │
+│                                                                 │
+│   Security: Kyber-1024 KEM + Dilithium-5 Signatures             │
+│   Aggregation: FedAvg + Quantum-Enhanced                        │
+│   Error Mitigation: Zero-Noise Extrapolation                    │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ⚠️ Important Disclaimer
+## Important Disclaimer
 
 <table>
 <tr>
 <td width="50%">
 
-### ✅ What This IS
-- 🎓 Educational/research project
-- 🔬 Working quantum circuits on simulator
-- 📚 Learning resource for FL + QML + PQC
-- 🏗️ Architecture proof-of-concept
+### What This IS
+- Educational/research project
+- Working quantum circuits on simulator
+- Learning resource for FL + QML + PQC
+- Architecture proof-of-concept
 
 </td>
 <td width="50%">
 
-### ❌ What This is NOT
-- 🚫 Production-ready software
-- 🚫 Connected to real quantum hardware
-- 🚫 Real Kyber/Dilithium (simulated)
-- 🚫 Trained on real datasets
+### What This is NOT
+- Production-ready software
+- Connected to real quantum hardware
+- Real Kyber/Dilithium (simulated)
+- Trained on real datasets
 
 </td>
 </tr>
@@ -91,7 +91,7 @@ Q-Edge is an **experimental platform** that explores the intersection of three c
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -129,42 +129,42 @@ flutter run -d chrome  # or your preferred device
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 q-edge/
-├── 📂 src/
-│   ├── 📂 quantum/           # Quantum ML modules
+├── src/
+│   ├── quantum/              # Quantum ML modules
 │   │   ├── circuits.py       # Variational Quantum Circuits
 │   │   ├── kernels.py        # Quantum Kernel Alignment
 │   │   ├── error_mitigation.py # Zero-Noise Extrapolation
 │   │   ├── aggregator.py     # Quantum-Enhanced Aggregation
 │   │   └── azure_connector.py # Azure Quantum Integration
 │   │
-│   ├── 📂 backend/           # FastAPI Backend
+│   ├── backend/              # FastAPI Backend
 │   │   ├── main.py           # API endpoints
 │   │   ├── security.py       # PQC implementation
 │   │   └── celery_app.py     # Async task queue
 │   │
-│   └── 📂 mobile/            # Mobile FL Client
+│   └── mobile/               # Mobile FL Client
 │       ├── fl_client.py      # Flower-based FL client
 │       └── pqc_transport.py  # PQC transport layer
 │
-├── 📂 mobile_app/            # Flutter UI
+├── mobile_app/               # Flutter UI
 │   └── lib/main.dart         # Mobile dashboard
 │
-├── 📂 tests/                 # Unit & integration tests
-├── 📂 docs/                  # Documentation
-├── 📜 demo.py                # Demo script
-├── 📜 requirements.txt       # Python dependencies
-└── 📜 docker-compose.yml     # Container orchestration
+├── tests/                    # Unit & integration tests
+├── docs/                     # Documentation
+├── demo.py                   # Demo script
+├── requirements.txt          # Python dependencies
+└── docker-compose.yml        # Container orchestration
 ```
 
 ---
 
-## 🔬 How It Works
+## How It Works
 
-### 1️⃣ Federated Learning Flow
+### 1. Federated Learning Flow
 
 ```
 Mobile Device A ─┐
@@ -174,7 +174,7 @@ Mobile Device B ─┼──────────────▶ Q-Edge Serve
 Mobile Device C ─┘
 ```
 
-### 2️⃣ Quantum Circuit
+### 2. Quantum Circuit
 
 ```python
 # Variational Quantum Circuit for Global Aggregation
@@ -190,7 +190,7 @@ def vqc(params, data):
     return qml.probs(wires=range(n_qubits))
 ```
 
-### 3️⃣ Post-Quantum Security
+### 3. Post-Quantum Security
 
 | Algorithm | Purpose | Security Level |
 |-----------|---------|----------------|
@@ -200,7 +200,7 @@ def vqc(params, data):
 
 ---
 
-## 📊 Simulation Results
+## Simulation Results
 
 > ⚠️ **Note**: Results from **local simulator** with **synthetic data**
 
@@ -223,7 +223,7 @@ def vqc(params, data):
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 <div align="center">
 
@@ -240,7 +240,7 @@ def vqc(params, data):
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Variational Quantum Circuits
 - [x] Quantum Kernel Alignment
@@ -255,7 +255,7 @@ def vqc(params, data):
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -267,13 +267,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-## 📜 License
+## License
 
 This project is licensed under the **Apache License 2.0** - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [PennyLane](https://pennylane.ai) - Quantum ML framework
 - [Flower](https://flower.dev) - Federated Learning framework
@@ -283,8 +283,8 @@ This project is licensed under the **Apache License 2.0** - see the [LICENSE](LI
 
 <div align="center">
 
-**⭐ Star this repo if you find it interesting!**
+**Star this repo if you find it interesting!**
 
-Made with ❤️ for the Quantum Computing Community
+Made for the Quantum Computing Community
 
 </div>
