@@ -40,6 +40,22 @@ Q-Edge is an **experimental platform** that explores the intersection of three c
 | **Post-Quantum Crypto** | Kyber & Dilithium (NIST standards) | Placeholder |
 | **Azure Quantum** | Cloud quantum hardware integration | Code Ready |
 
+### Why Quantum?
+
+> *"Why does FL aggregation need quantum?"*
+
+| Aspect | Classical FL | Quantum-Enhanced FL |
+|--------|--------------|---------------------|
+| **Aggregation** | FedAvg (linear) | Quantum kernel for non-linear patterns |
+| **Privacy** | Differential privacy | + Quantum key distribution potential |
+| **Optimization** | Gradient descent | Variational quantum optimization |
+| **Scalability** | O(n) parameters | Quantum parallelism for high-dim data |
+
+**Honest take:** At this stage, quantum advantages are still *theoretical* and only running on simulators. But research shows potential for:
+- Better resistance against adversarial attacks
+- More efficient loss function landscape exploration
+- Quantum-secure communication between FL clients
+
 ---
 
 ## Key Features
